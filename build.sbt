@@ -1,4 +1,4 @@
-name := """playlist-sequels"""
+name := """sequelfy"""
 
 version := "1.0-SNAPSHOT"
 
