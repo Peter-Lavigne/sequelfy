@@ -2,4 +2,4 @@
 
 Create sequels for Spotify playlists.
 
-Try it out at [sequelfy.com](http://www.sequelfy.com).
+Try it out at [sequelfy.com](https://www.sequelfy.com).
