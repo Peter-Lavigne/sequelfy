@@ -1,20 +1,19 @@
 @*
- * This template takes a single argument, a String containing a
- * message to display.
+ * The home page.
  *@
-@(message: String)
+@()
 
-@*
- * Call the `main` template with two arguments. The first
- * argument is a `String` with the title of the page, the second
- * argument is an `Html` object containing the body of the page.
- *@
-@main("Welcome to Play") {
+@main("Sequelfy") {
 
-    @*
-     * Get an `Html` object by calling the built-in Play welcome
-     * template and passing a `String` message.
-     *@
-    @welcome(message, style = "scala")
+    <section class="jumbotron text-center">
+        <div class="container">
+            <h1 class="jumbotron-heading">Sequelfy</h1>
+            <p class="lead text-muted">Love a playlist? Let's make another.</p>
+            <p>
+                <a href="#" class="btn btn-primary my-2">Try it out</a>
+                <a href="#" class="btn btn-secondary my-2">About</a>
+            </p>
+        </div>
+    </section>
 
 }
