@@ -1,7 +1,7 @@
 @*
  * The home page.
  *@
-@()
+@(authorizationUrl: String)
 
 @main("Sequelfy") {
 
@@ -10,7 +10,7 @@
             <h1 class="jumbotron-heading">Sequelfy</h1>
             <p class="lead text-muted">Love a playlist? Let's make another.</p>
             <p>
-                <a href="#" class="btn btn-primary my-2">Try it out</a>
+                <a href="@authorizationUrl" class="btn btn-primary my-2">Try it out</a>
                 <a href="#" class="btn btn-secondary my-2">About</a>
             </p>
         </div>
