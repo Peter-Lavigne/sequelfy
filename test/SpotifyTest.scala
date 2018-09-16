@@ -90,7 +90,7 @@ class SpotifyTest extends FunSuite {
 
     try {
       val authorizationCodeCredentials = authorizationCodeRequest.execute
-      
+
       // set access and refresh tokens to use spotifyApi with credentials
       spotifyApi.setAccessToken(authorizationCodeCredentials.getAccessToken)
       spotifyApi.setRefreshToken(authorizationCodeCredentials.getRefreshToken)
