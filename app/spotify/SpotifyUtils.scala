@@ -4,6 +4,7 @@ import java.io.IOException
 import java.net.URI
 
 import com.wrapper.spotify.exceptions.SpotifyWebApiException
+import com.wrapper.spotify.model_objects.specification.PlaylistSimplified
 import com.wrapper.spotify.{SpotifyApi, SpotifyHttpManager}
 import com.wrapper.spotify.requests.authorization.authorization_code.AuthorizationCodeRequest
 import com.wrapper.spotify.requests.authorization.client_credentials.ClientCredentialsRequest
@@ -15,7 +16,7 @@ object SpotifyUtils {
   val clientSecret = sys.env("SPOTIFY_API_CLIENT_SECRET")
 
   // the URL to redirect to along with a parameter containing the authorization code
-  val redirectUri: URI = SpotifyHttpManager.makeUri("https://sequelfy.com")
+  val redirectUri: URI = SpotifyHttpManager.makeUri("https://sequelfy.com/select-playlist/")
 
   // TODO generate and validate this state
   // https://developer.spotify.com/documentation/general/guides/authorization-guide/#authorization-code-flow
@@ -70,6 +71,15 @@ object SpotifyUtils {
         println("Error: " + e.getMessage)
         throw e
     }
+  }
+
+  def getPlaylistsFromUser(code: String): Array[PlaylistSimplified] = {
+    spotifyApiUserAuthentication(code)
+      .getListOfCurrentUsersPlaylists
+      .limit(50) // TODO add pagination, the max is 50
+      .build()
+      .execute()
+      .getItems
   }
 
 }

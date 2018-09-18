@@ -1,0 +1,31 @@
+@*
+ * Page for selecting which playlist you want to Sequelfy
+ *@
+@import com.wrapper.spotify.model_objects.specification.PlaylistSimplified
+@(playlists: Seq[PlaylistSimplified])
+
+@emptyPlaylistImage = @{routes.Assets.versioned("images/empty-playlist.png")}
+
+@main("Sequelfy") {
+
+    <section class="jumbotron text-center">
+        <div class="container">
+            <h1 class="jumbotron-heading">Select a playlist</h1>
+            <div class="row">
+                @for(playlist <- playlists) {
+                    <div class="col-md-4">
+                        <div class="thumbnail">
+                            <a href="#">
+                                <img src="@playlist.getImages.headOption.map(_.getUrl).getOrElse(emptyPlaylistImage)" style="width:100%">
+                                <div class="caption">
+                                    <p>@playlist.getName</p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
+}
