@@ -1,0 +1,15 @@
+@*
+ * Page for selecting which playlist you want to Sequelfy
+ *@
+@(playlistId: String)
+
+@main("Sequelfy") {
+
+    <section class="jumbotron text-center">
+        <div class="container">
+            <h1 class="jumbotron-heading">Your new playlist</h1>
+            <iframe src="https://open.spotify.com/embed/playlist/@playlistId" width="300" height="380" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
+        </div>
+    </section>
+
+}

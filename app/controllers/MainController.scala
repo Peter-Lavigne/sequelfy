@@ -19,8 +19,15 @@ class MainController @Inject() extends Controller {
   def selectPlaylist(codeOption: Option[String]): Action[AnyContent] = codeOption.map(code =>
     Action {
       Ok(views.html.selectPlaylist(
-        SpotifyUtils.getPlaylistsFromUser(code)
+        SpotifyUtils.getPlaylistsFromUser(code),
+        "refresh-token" // TODO pass the actual refresh token
       ))
     }).getOrElse(index)
+
+  def createPlaylist(refreshToken: Option[String], playlistId: Option[String]): Action[AnyContent] =
+    (refreshToken, playlistId) match {
+      case (Some(token), Some(id)) => Action { Ok(views.html.createPlaylist(SpotifyUtils.createPlaylist(token, id))) }
+      case _ => index
+    }
 
 }

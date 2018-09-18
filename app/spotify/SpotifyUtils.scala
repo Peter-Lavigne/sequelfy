@@ -73,6 +73,10 @@ object SpotifyUtils {
     }
   }
 
+  /** Returns all the playlists (public and private) from a user.
+    *
+    * @param code the authorization code received from following the link given by authorizationCodeUri
+    */
   def getPlaylistsFromUser(code: String): Array[PlaylistSimplified] = {
     spotifyApiUserAuthentication(code)
       .getListOfCurrentUsersPlaylists
@@ -81,5 +85,15 @@ object SpotifyUtils {
       .execute()
       .getItems
   }
+
+  /** Create a playlist based on the given playlist. This method will use the genres of the artists within the playlist
+    * to create a new one.
+    *
+    * @param refreshToken the token used to get a new access token.
+    *                     see https://developer.spotify.com/documentation/general/guides/authorization-guide/#authorization-code-flow
+    * @param playlistId the id of the playlist to base the new one off of
+    * @return the playlist id of the new playlist
+    */
+  def createPlaylist(refreshToken: String, playlistId: String): String = playlistId // TODO don't return the same playlist
 
 }
