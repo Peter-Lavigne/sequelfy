@@ -15,7 +15,7 @@
                 @for(playlist <- playlists) {
                     <div class="col-md-4">
                         <div class="thumbnail">
-                            <a href="/create-playlist?refreshToken=@accessToken&playlistId=@playlist.getId">
+                            <a href="/create-playlist?accessToken=@accessToken&playlistId=@playlist.getId">
                                 <img src="@playlist.getImages.headOption.map(_.getUrl).getOrElse(emptyPlaylistImage)" style="width:100%">
                                 <div class="caption">
                                     <p>@playlist.getName</p>
