@@ -22,12 +22,12 @@ class MainController @Inject() extends Controller {
       val spotifyApi: SpotifyApi = SpotifyUtils.spotifyApiUserAuthentication(code)
       Ok(views.html.selectPlaylist(
         SpotifyUtils.getPlaylistsFromUser(spotifyApi),
-        spotifyApi.getRefreshToken
+        spotifyApi.getAccessToken
       ))
     }).getOrElse(index)
 
-  def createPlaylist(refreshToken: Option[String], playlistId: Option[String]): Action[AnyContent] =
-    (refreshToken, playlistId) match {
+  def createPlaylist(accessToken: Option[String], playlistId: Option[String]): Action[AnyContent] =
+    (accessToken, playlistId) match {
       case (Some(token), Some(id)) => Action { Ok(views.html.createPlaylist(SpotifyUtils.createPlaylist(token, id))) }
       case _ => index
     }

@@ -111,14 +111,33 @@ object SpotifyUtils {
     }
   }
 
+  /** Creates a SpotifyApi object from an access token.
+    *
+    * @param accessToken the access token given by an authenticated SpotifyApi object
+    */
+  def spotifyApiFromAccessToken(accessToken: String): SpotifyApi = {
+    val spotifyApi: SpotifyApi = createSpotifyApi
+    spotifyApi.setAccessToken(accessToken)
+    spotifyApi
+  }
+
   /** Create a playlist based on the given playlist. This method will use the genres of the artists within the playlist
     * to create a new one.
     *
-    * @param refreshToken the token used to get a new access token.
+    * @param accessToken the token used to get a new access token.
     *                     see https://developer.spotify.com/documentation/general/guides/authorization-guide/#authorization-code-flow
     * @param playlistId the id of the playlist to base the new one off of
     * @return the playlist id of the new playlist
     */
-  def createPlaylist(refreshToken: String, playlistId: String): String = playlistId
+  def createPlaylist(accessToken: String, playlistId: String): String = {
+    val spotifyApi: SpotifyApi = spotifyApiFromAccessToken(accessToken)
+
+    val playlist = spotifyApi.getPlaylist(
+      spotifyApi.getCurrentUsersProfile.build().execute().getId,
+      playlistId
+    )
+
+    playlist.build().execute().getId
+  }
 
 }
