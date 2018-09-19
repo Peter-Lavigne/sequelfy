@@ -4,10 +4,12 @@ import java.io.IOException
 import java.net.URI
 
 import com.wrapper.spotify.exceptions.SpotifyWebApiException
-import com.wrapper.spotify.model_objects.specification.PlaylistSimplified
+import com.wrapper.spotify.model_objects.specification.{Playlist, PlaylistSimplified, PlaylistTrack, Track}
 import com.wrapper.spotify.{SpotifyApi, SpotifyHttpManager}
 import com.wrapper.spotify.requests.authorization.authorization_code.{AuthorizationCodeRefreshRequest, AuthorizationCodeRequest}
 import com.wrapper.spotify.requests.authorization.client_credentials.ClientCredentialsRequest
+
+import scala.collection.mutable
 
 object SpotifyUtils {
 
@@ -121,6 +123,29 @@ object SpotifyUtils {
     spotifyApi
   }
 
+  // retrieve the genres from a track
+  def getGenresFromTrack(track: Track): Seq[String] = {
+    track.getArtists.flatMap(artist => spotifyApiClientCredentials.getArtist(artist.getId).build().execute().getGenres)
+  }
+
+  // returns the frequency at which each element occurs. elements in the subsequences are given value relative to
+  // how many elements are in that sublist.
+  //
+  // for example, getFrequencies(Seq(Seq("A"), Seq("B", "C")) returns Map("A" -> 0.5, "B" -> 0.25, "C" -> 0.25
+  def getFrequencies[A](elements: Seq[Seq[A]]): Map[A, Double] = {
+      ???
+  }
+
+  // returns the "The Sound of ..." playlist for a given genre
+  def getSoundOfPlaylistForGenre(genre: String): Playlist = {
+      ???
+  }
+
+  // returns n random tracks from a playlist (non-repeating)
+  def getRandomTracksFromPlaylist(playlist: Playlist, n: Int): Seq[Track] = {
+      ???
+  }
+
   /** Create a playlist based on the given playlist. This method will use the genres of the artists within the playlist
     * to create a new one.
     *
@@ -129,15 +154,29 @@ object SpotifyUtils {
     * @param playlistId the id of the playlist to base the new one off of
     * @return the playlist id of the new playlist
     */
-  def createPlaylist(accessToken: String, playlistId: String): String = {
+  def createPlaylistSequel(accessToken: String, playlistId: String): String = {
     val spotifyApi: SpotifyApi = spotifyApiFromAccessToken(accessToken)
+    val userId: String = spotifyApi.getCurrentUsersProfile.build().execute().getId
 
     val playlist = spotifyApi.getPlaylist(
-      spotifyApi.getCurrentUsersProfile.build().execute().getId,
+      userId,
       playlistId
-    )
+    ).build().execute()
 
-    playlist.build().execute().getId
+    val tracks: Seq[Track] = playlist.getTracks.getItems.map(_.getTrack)
+    val genreCounts: Seq[Seq[String]] = tracks.map(getGenresFromTrack)
+    val genreFrequencies: Map[String, Double] = getFrequencies(genreCounts)
+
+    val newPlaylistTracks: Seq[Track] = genreFrequencies.flatMap{case (genre, frequency) =>
+      getRandomTracksFromPlaylist(getSoundOfPlaylistForGenre(genre), (frequency * tracks.size).toInt)
+    }.toSeq
+
+    spotifyApi.createPlaylist(userId, playlist.getName + " 2") // TODO check if this name already exists
+      .public_(true)
+      .description(s"A sequel to the playlist ${playlist.getName} made using Sequelfy.com")
+      .build()
+      .execute()
+      .getId
   }
 
 }
