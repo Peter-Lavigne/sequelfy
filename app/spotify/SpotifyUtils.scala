@@ -6,7 +6,7 @@ import java.net.URI
 import com.wrapper.spotify.exceptions.SpotifyWebApiException
 import com.wrapper.spotify.model_objects.specification.PlaylistSimplified
 import com.wrapper.spotify.{SpotifyApi, SpotifyHttpManager}
-import com.wrapper.spotify.requests.authorization.authorization_code.AuthorizationCodeRequest
+import com.wrapper.spotify.requests.authorization.authorization_code.{AuthorizationCodeRefreshRequest, AuthorizationCodeRequest}
 import com.wrapper.spotify.requests.authorization.client_credentials.ClientCredentialsRequest
 
 object SpotifyUtils {
@@ -23,7 +23,7 @@ object SpotifyUtils {
   val state = "x4xkmn9pu3j6ukrs8n"
 
   // create a spotifyApi object to use the API
-  def spotifyApi: SpotifyApi = new SpotifyApi.Builder()
+  def createSpotifyApi: SpotifyApi = new SpotifyApi.Builder()
     .setClientId(clientId)
     .setClientSecret(clientSecret)
     .setRedirectUri(redirectUri)
@@ -31,11 +31,11 @@ object SpotifyUtils {
 
   // create a SpotifyApi object using the client credentials workflow. no user authentication is required
   def spotifyApiClientCredentials: SpotifyApi = {
-    val spotifyApiClientCredentials: SpotifyApi = spotifyApi
-    val clientCredentialsRequest: ClientCredentialsRequest = spotifyApiClientCredentials.clientCredentials().build()
+    val spotifyApi: SpotifyApi = createSpotifyApi
+    val clientCredentialsRequest: ClientCredentialsRequest = spotifyApi.clientCredentials().build()
     // set the access token to continue using the spotifyApi object
-    spotifyApiClientCredentials.setAccessToken(clientCredentialsRequest.execute().getAccessToken)
-    spotifyApiClientCredentials
+    spotifyApi.setAccessToken(clientCredentialsRequest.execute().getAccessToken)
+    spotifyApi
   }
 
   /** Create a link to authorize a spotify account for a given scope
@@ -43,7 +43,7 @@ object SpotifyUtils {
     * @param scope the authorization scopes needed for the user, in the form (scope1,scope2,...).
     *              see https://developer.spotify.com/documentation/general/guides/scopes/
     */
-  def authorizationCodeUri(scope: String): URI = spotifyApi
+  def authorizationCodeUri(scope: String): URI = createSpotifyApi
     .authorizationCodeUri
     .state(state)
     .scope(scope)
@@ -56,16 +56,16 @@ object SpotifyUtils {
     * @param code the authorization code received from following the link given by authorizationCodeUri
     */
   def spotifyApiUserAuthentication(code: String): SpotifyApi = {
-    val spotifyApiUserAuthentication: SpotifyApi = spotifyApi
+    val spotifyApi: SpotifyApi = createSpotifyApi
     // create a request for the access and refresh tokens
-    val authorizationCodeRequest: AuthorizationCodeRequest = spotifyApiUserAuthentication.authorizationCode(code).build
+    val authorizationCodeRequest: AuthorizationCodeRequest = spotifyApi.authorizationCode(code).build
 
     try {
       val authorizationCodeCredentials = authorizationCodeRequest.execute
       // set access and refresh tokens to use continue using spotifyApiUserAuthentication with credentials
-      spotifyApiUserAuthentication.setAccessToken(authorizationCodeCredentials.getAccessToken)
-      spotifyApiUserAuthentication.setRefreshToken(authorizationCodeCredentials.getRefreshToken)
-      spotifyApiUserAuthentication
+      spotifyApi.setAccessToken(authorizationCodeCredentials.getAccessToken)
+      spotifyApi.setRefreshToken(authorizationCodeCredentials.getRefreshToken)
+      spotifyApi
     } catch {
       case e@(_: IOException | _: SpotifyWebApiException) =>
         println("Error: " + e.getMessage)
@@ -75,15 +75,40 @@ object SpotifyUtils {
 
   /** Returns all the playlists (public and private) from a user.
     *
-    * @param code the authorization code received from following the link given by authorizationCodeUri
+    * @param spotifyApiUserAuth a SpotifyApi object obtained from calling spotifyApiUserAuthentication
     */
-  def getPlaylistsFromUser(code: String): Array[PlaylistSimplified] = {
-    spotifyApiUserAuthentication(code)
+  def getPlaylistsFromUser(spotifyApiUserAuth: SpotifyApi): Array[PlaylistSimplified] = {
+    spotifyApiUserAuth
       .getListOfCurrentUsersPlaylists
       .limit(50) // TODO add pagination, the max is 50
       .build()
       .execute()
       .getItems
+  }
+
+  /** Creates a SpotifyApi object from a refresh token.
+    *
+    * @param refreshToken the refresh token given by an authenticated SpotifyApi object
+    */
+  def spotifyApiFromRefreshToken(refreshToken: String): SpotifyApi = {
+    val spotifyApi: SpotifyApi = createSpotifyApi
+    spotifyApi.setRefreshToken(refreshToken)
+
+    val authorizationCodeRefreshRequest: AuthorizationCodeRefreshRequest  = spotifyApi
+      .authorizationCodeRefresh()
+      .build()
+
+    try {
+      val authorizationCodeCredentials = authorizationCodeRefreshRequest.execute
+      // set access and refresh tokens to use continue using spotifyApiUserAuthentication with credentials
+      spotifyApi.setAccessToken(authorizationCodeCredentials.getAccessToken)
+      spotifyApi.setRefreshToken(authorizationCodeCredentials.getRefreshToken)
+      spotifyApi
+    } catch {
+      case e@(_: IOException | _: SpotifyWebApiException) =>
+        println("Error: " + e.getMessage)
+        throw e
+    }
   }
 
   /** Create a playlist based on the given playlist. This method will use the genres of the artists within the playlist
@@ -94,6 +119,6 @@ object SpotifyUtils {
     * @param playlistId the id of the playlist to base the new one off of
     * @return the playlist id of the new playlist
     */
-  def createPlaylist(refreshToken: String, playlistId: String): String = playlistId // TODO don't return the same playlist
+  def createPlaylist(refreshToken: String, playlistId: String): String = playlistId
 
 }

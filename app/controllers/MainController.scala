@@ -1,5 +1,6 @@
 package controllers
 
+import com.wrapper.spotify.SpotifyApi
 import javax.inject.{Inject, Singleton}
 import play.api.mvc.{Action, AnyContent, Controller}
 import spotify.SpotifyUtils
@@ -18,9 +19,10 @@ class MainController @Inject() extends Controller {
   // show the "select playlist" page if the user has authenticated
   def selectPlaylist(codeOption: Option[String]): Action[AnyContent] = codeOption.map(code =>
     Action {
+      val spotifyApi: SpotifyApi = SpotifyUtils.spotifyApiUserAuthentication(code)
       Ok(views.html.selectPlaylist(
-        SpotifyUtils.getPlaylistsFromUser(code),
-        "refresh-token" // TODO pass the actual refresh token
+        SpotifyUtils.getPlaylistsFromUser(spotifyApi),
+        spotifyApi.getRefreshToken
       ))
     }).getOrElse(index)
 
