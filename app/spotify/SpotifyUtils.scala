@@ -9,6 +9,7 @@ import com.wrapper.spotify.{SpotifyApi, SpotifyHttpManager}
 import com.wrapper.spotify.requests.authorization.authorization_code.{AuthorizationCodeRefreshRequest, AuthorizationCodeRequest}
 import com.wrapper.spotify.requests.authorization.client_credentials.ClientCredentialsRequest
 
+import scala.util.Random
 import scala.collection.mutable
 
 object SpotifyUtils {
@@ -142,8 +143,8 @@ object SpotifyUtils {
   }
 
   // returns n random tracks from a playlist (non-repeating)
-  def getRandomTracksFromPlaylist(playlist: Playlist, n: Int): Seq[Track] = {
-      ???
+  def getRandomTracksFromPlaylist(playlist: Playlist, n: Int): Seq[PlaylistTrack] = {
+    Random.shuffle(playlist.getTracks.getItems.toSeq).take(n)
   }
 
   /** Create a playlist based on the given playlist. This method will use the genres of the artists within the playlist
@@ -167,7 +168,7 @@ object SpotifyUtils {
     val genreCounts: Seq[Seq[String]] = tracks.map(getGenresFromTrack)
     val genreFrequencies: Map[String, Double] = getFrequencies(genreCounts)
 
-    val newPlaylistTracks: Seq[Track] = genreFrequencies.flatMap{case (genre, frequency) =>
+    val newPlaylistTracks: Seq[PlaylistTrack] = genreFrequencies.flatMap{case (genre, frequency) =>
       getRandomTracksFromPlaylist(getSoundOfPlaylistForGenre(genre), (frequency * tracks.size).toInt)
     }.toSeq
 
