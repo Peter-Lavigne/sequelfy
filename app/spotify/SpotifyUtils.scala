@@ -136,7 +136,9 @@ object SpotifyUtils {
   def getFrequencies[A](elements: Seq[Seq[A]]): Map[A, Double] = {
     val frequencies = mutable.Map[A, Double]()
     for (inner <- elements; a <- inner) {
-      frequencies(a) = frequencies.getOrElse(a, 0) + (1.0 / inner.size / elements.size)
+      val current: Double = frequencies.getOrElse(a, 0.0)
+      val addition: Double = 1.0 / inner.size / elements.size
+      frequencies(a) = current + addition
     }
     frequencies.toMap
   }
