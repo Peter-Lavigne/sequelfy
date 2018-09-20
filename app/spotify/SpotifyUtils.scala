@@ -192,7 +192,7 @@ object SpotifyUtils {
       .execute()
 
     spotifyApi
-      .addTracksToPlaylist(userId, newPlaylist.getId, tracks.map(_.getUri).toArray)
+      .addTracksToPlaylist(userId, newPlaylist.getId, newPlaylistTracks.map(_.getTrack.getUri).toArray)
       .position(0)
       .build()
       .execute()
