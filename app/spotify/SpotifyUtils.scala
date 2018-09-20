@@ -134,7 +134,11 @@ object SpotifyUtils {
   //
   // for example, getFrequencies(Seq(Seq("A"), Seq("B", "C")) returns Map("A" -> 0.5, "B" -> 0.25, "C" -> 0.25
   def getFrequencies[A](elements: Seq[Seq[A]]): Map[A, Double] = {
-      ???
+    val frequencies = mutable.Map[A, Double]()
+    for (inner <- elements; a <- inner) {
+      frequencies(a) = frequencies.getOrElse(a, 0) + (1.0 / inner.size / elements.size)
+    }
+    frequencies.toMap
   }
 
   // returns Spotify's "The Sound of ..." playlist for a given genre
@@ -142,7 +146,7 @@ object SpotifyUtils {
     val userId: String = spotifyApi.getCurrentUsersProfile.build().execute().getId
     spotifyApi.getPlaylist(
       userId,
-      spotifyApi.searchPlaylists(s"The Sound of $genre").build().execute().getItems.take(1).head.getId
+      spotifyApi.searchPlaylists(s"The Sound of $genre").build().execute().getItems()(0).getId
     ).build().execute()
   }
 
