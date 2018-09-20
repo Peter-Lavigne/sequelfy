@@ -8,6 +8,7 @@ import com.wrapper.spotify.model_objects.specification.{Playlist, PlaylistSimpli
 import com.wrapper.spotify.{SpotifyApi, SpotifyHttpManager}
 import com.wrapper.spotify.requests.authorization.authorization_code.{AuthorizationCodeRefreshRequest, AuthorizationCodeRequest}
 import com.wrapper.spotify.requests.authorization.client_credentials.ClientCredentialsRequest
+import com.wrapper.spotify.requests.data.playlists.AddTracksToPlaylistRequest
 
 import scala.util.Random
 import scala.collection.mutable
@@ -184,12 +185,19 @@ object SpotifyUtils {
       ).getOrElse(Seq())
     }.toSeq
 
-    spotifyApi.createPlaylist(userId, playlist.getName + " 2") // TODO check if this name already exists
+    val newPlaylist = spotifyApi.createPlaylist(userId, playlist.getName + " 2") // TODO check if this name already exists
       .public_(true)
       .description(s"A sequel to the playlist ${playlist.getName} made using Sequelfy.com")
       .build()
       .execute()
-      .getId
+
+    spotifyApi
+      .addTracksToPlaylist(userId, newPlaylist.getId, tracks.map(_.getUri).toArray)
+      .position(0)
+      .build()
+      .execute()
+
+    newPlaylist.getId
   }
 
 }
