@@ -144,12 +144,12 @@ object SpotifyUtils {
   }
 
   // returns Spotify's "The Sound of ..." playlist for a given genre
-  def getSoundOfPlaylistForGenre(genre: String, spotifyApi: SpotifyApi): Playlist = {
+  def getSoundOfPlaylistForGenre(genre: String, spotifyApi: SpotifyApi): Option[Playlist] = {
     val userId: String = spotifyApi.getCurrentUsersProfile.build().execute().getId
-    spotifyApi.getPlaylist(
-      userId,
-      spotifyApi.searchPlaylists(s"The Sound of $genre").build().execute().getItems()(0).getId
-    ).build().execute()
+    val soundOfPlaylist = spotifyApi.searchPlaylists(s"The Sound of $genre").build().execute().getItems.headOption
+    soundOfPlaylist.map(playlist =>
+      spotifyApi.getPlaylist(userId, playlist.getId).build().execute()
+    )
   }
 
   // returns n random tracks from a playlist (non-repeating)
@@ -179,7 +179,9 @@ object SpotifyUtils {
     val genreFrequencies: Map[String, Double] = getFrequencies(genreCounts)
 
     val newPlaylistTracks: Seq[PlaylistTrack] = genreFrequencies.flatMap{case (genre, frequency) =>
-      getRandomTracksFromPlaylist(getSoundOfPlaylistForGenre(genre, spotifyApi), (frequency * tracks.size).toInt)
+      getSoundOfPlaylistForGenre(genre, spotifyApi).map(soundOfPlaylist =>
+        getRandomTracksFromPlaylist(soundOfPlaylist, (frequency * tracks.size).toInt)
+      ).getOrElse(Seq())
     }.toSeq
 
     spotifyApi.createPlaylist(userId, playlist.getName + " 2") // TODO check if this name already exists
