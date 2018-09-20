@@ -137,9 +137,13 @@ object SpotifyUtils {
       ???
   }
 
-  // returns the "The Sound of ..." playlist for a given genre
-  def getSoundOfPlaylistForGenre(genre: String): Playlist = {
-      ???
+  // returns Spotify's "The Sound of ..." playlist for a given genre
+  def getSoundOfPlaylistForGenre(genre: String, spotifyApi: SpotifyApi): Playlist = {
+    val userId: String = spotifyApi.getCurrentUsersProfile.build().execute().getId
+    spotifyApi.getPlaylist(
+      userId,
+      spotifyApi.searchPlaylists(s"The Sound of $genre").build().execute().getItems.take(1).head.getId
+    ).build().execute()
   }
 
   // returns n random tracks from a playlist (non-repeating)
@@ -169,7 +173,7 @@ object SpotifyUtils {
     val genreFrequencies: Map[String, Double] = getFrequencies(genreCounts)
 
     val newPlaylistTracks: Seq[PlaylistTrack] = genreFrequencies.flatMap{case (genre, frequency) =>
-      getRandomTracksFromPlaylist(getSoundOfPlaylistForGenre(genre), (frequency * tracks.size).toInt)
+      getRandomTracksFromPlaylist(getSoundOfPlaylistForGenre(genre, spotifyApi), (frequency * tracks.size).toInt)
     }.toSeq
 
     spotifyApi.createPlaylist(userId, playlist.getName + " 2") // TODO check if this name already exists
