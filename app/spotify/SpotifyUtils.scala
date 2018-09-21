@@ -9,6 +9,7 @@ import com.wrapper.spotify.{SpotifyApi, SpotifyHttpManager}
 import com.wrapper.spotify.requests.authorization.authorization_code.{AuthorizationCodeRefreshRequest, AuthorizationCodeRequest}
 import com.wrapper.spotify.requests.authorization.client_credentials.ClientCredentialsRequest
 import com.wrapper.spotify.requests.data.playlists.AddTracksToPlaylistRequest
+import org.asynchttpclient.request.body.multipart.part.PartVisitor.CounterPartVisitor
 
 import scala.util.Random
 import scala.collection.mutable
@@ -158,6 +159,11 @@ object SpotifyUtils {
     Random.shuffle(playlist.getTracks.getItems.toSeq).take(n)
   }
 
+  // appends a digit to the end of 'name' (starting with 2) that doesn't conflict with any other names
+  def sequelName(name: String, playlists: Seq[String]): String = {
+    name + " " + Stream.from(2).filter(n => !playlists.contains(s"$name ${n.toString}")).head.toString
+  }
+
   /** Create a playlist based on the given playlist. This method will use the genres of the artists within the playlist
     * to create a new one.
     *
@@ -187,7 +193,8 @@ object SpotifyUtils {
       ).getOrElse(Seq())
     }.toSeq
 
-    val newPlaylist = spotifyApi.createPlaylist(userId, playlist.getName + " 2") // TODO check if this name already exists
+    val sequelTitle = sequelName(playlist.getName, getPlaylistsFromUser(spotifyApi).map(_.getName))
+    val newPlaylist = spotifyApi.createPlaylist(userId, sequelTitle) // TODO check if this name already exists
       .public_(true)
       .description(s"A sequel to the playlist ${playlist.getName} made using Sequelfy.com")
       .build()

@@ -68,8 +68,8 @@ class SpotifyUtilsTest extends FunSuite {
 
     val playlist = SpotifyUtils.getSoundOfPlaylistForGenre("gauze pop", spotifyApi)
 
-    assert(playlist.getName == "The Sound of Gauze Pop")
-    assert(playlist.getOwner.getDisplayName == "The Sounds of Spotify")
+    assert(playlist.map(_.getName).getOrElse("") == "The Sound of Gauze Pop")
+    assert(playlist.map(_.getOwner.getDisplayName).getOrElse("") == "The Sounds of Spotify")
   }
 
   test("Getting random tracks from playlist") {
@@ -80,13 +80,20 @@ class SpotifyUtilsTest extends FunSuite {
     val spotifyApi: SpotifyApi = SpotifyUtils.spotifyApiFromAccessToken(accessToken)
 
     val playlist = SpotifyUtils.getSoundOfPlaylistForGenre("gauze pop", spotifyApi)
+    assert(playlist.isDefined)
 
-    val tracks = SpotifyUtils.getRandomTracksFromPlaylist(playlist, 10)
+    val tracks = SpotifyUtils.getRandomTracksFromPlaylist(playlist.get, 10)
 
     assert(tracks.size == 10)
     for (track <- tracks) {
       assert(tracks.count(_ == track) == 1)
     }
+  }
+
+  test("Sequel titles") {
+    assert(SpotifyUtils.sequelName("ABC", Seq("ABC", "DEF", "GHI")) == "ABC 2")
+    assert(SpotifyUtils.sequelName("ABC", Seq("ABC", "ABC 2", "DEF", "GHI")) == "ABC 3")
+    assert(SpotifyUtils.sequelName("ABC", Seq("ABC", "ABC 2", "ABC 3", "DEF", "GHI")) == "ABC 4")
   }
 
 }
