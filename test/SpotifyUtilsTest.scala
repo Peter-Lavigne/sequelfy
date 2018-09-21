@@ -44,8 +44,8 @@ class SpotifyUtilsTest extends FunSuite {
       .getTrack("0rgfnZB9zSh7T4hVnqBtnX") // "Can't Hold Me Down" by Dive In
       .build()
       .execute()
-    val genres: Seq[String] = SpotifyUtils.getGenresFromTrack(track)
-    genres should contain allOf ("gauze pop", "metropopolis")
+    val genres: Seq[Seq[String]] = SpotifyUtils.getGenresFromTracks(Seq(track))
+    genres should contain (Seq("gauze pop", "metropopolis"))
   }
 
   test("Getting frequencies") {

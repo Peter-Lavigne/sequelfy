@@ -4,7 +4,7 @@ import java.io.IOException
 import java.net.URI
 
 import com.wrapper.spotify.exceptions.SpotifyWebApiException
-import com.wrapper.spotify.model_objects.specification.{Playlist, PlaylistSimplified, PlaylistTrack, Track}
+import com.wrapper.spotify.model_objects.specification._
 import com.wrapper.spotify.{SpotifyApi, SpotifyHttpManager}
 import com.wrapper.spotify.requests.authorization.authorization_code.{AuthorizationCodeRefreshRequest, AuthorizationCodeRequest}
 import com.wrapper.spotify.requests.authorization.client_credentials.ClientCredentialsRequest
@@ -127,8 +127,14 @@ object SpotifyUtils {
   }
 
   // retrieve the genres from a track
-  def getGenresFromTrack(track: Track): Seq[String] = {
-    track.getArtists.flatMap(artist => spotifyApiClientCredentials.getArtist(artist.getId).build().execute().getGenres)
+  def getGenresFromTracks(tracks: Seq[Track]): Seq[Seq[String]] = {
+    val artists = spotifyApiClientCredentials
+      .getSeveralArtists(tracks.flatMap(_.getArtists).map(_.getId): _*)
+      .build()
+      .execute()
+
+    val idToGenres: Map[String, Seq[String]] = Map(artists.map(artist => artist.getId -> artist.getGenres.toSeq): _*)
+    tracks.flatMap(_.getArtists.map(artist => idToGenres(artist.getId)))
   }
 
   // returns the frequency at which each element occurs. elements in the subsequences are given value relative to
@@ -181,9 +187,9 @@ object SpotifyUtils {
       playlistId
     ).build().execute()
 
-    val sampleSize = 20
+    val sampleSize = 25
     val tracks: Seq[Track] = getRandomTracksFromPlaylist(playlist, sampleSize).map(_.getTrack)
-    val genreCounts: Seq[Seq[String]] = tracks.map(getGenresFromTrack)
+    val genreCounts: Seq[Seq[String]] = getGenresFromTracks(tracks)
     val genreFrequencies: Map[String, Double] = getFrequencies(genreCounts)
 
     val multiplier = 5
