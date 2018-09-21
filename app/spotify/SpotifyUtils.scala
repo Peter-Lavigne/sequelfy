@@ -192,12 +192,12 @@ object SpotifyUtils {
     val genreCounts: Seq[Seq[String]] = getGenresFromTracks(tracks)
     val genreFrequencies: Map[String, Double] = getFrequencies(genreCounts)
 
-    val multiplier = 5
+    val multiplier = 4
     val newPlaylistTracks: Seq[PlaylistTrack] = genreFrequencies.flatMap{case (genre, frequency) =>
       getSoundOfPlaylistForGenre(genre, spotifyApi).map(soundOfPlaylist =>
         getRandomTracksFromPlaylist(soundOfPlaylist, (frequency * tracks.size * multiplier).toInt)
       ).getOrElse(Seq())
-    }.toSeq
+    }.toSeq.take(100) // caps at 100
 
     val sequelTitle = sequelName(playlist.getName, getPlaylistsFromUser(spotifyApi).map(_.getName))
     val newPlaylist = spotifyApi.createPlaylist(userId, sequelTitle) // TODO check if this name already exists
