@@ -99,6 +99,8 @@ class SpotifyUtilsTest extends FunSuite {
     assert(SpotifyUtils.sequelName("ABC", Seq("ABC", "DEF", "GHI")) == "ABC 2")
     assert(SpotifyUtils.sequelName("ABC", Seq("ABC", "ABC 2", "DEF", "GHI")) == "ABC 3")
     assert(SpotifyUtils.sequelName("ABC", Seq("ABC", "ABC 2", "ABC 3", "DEF", "GHI")) == "ABC 4")
+
+    assert(SpotifyUtils.sequelName("ABC 2", Seq("ABC", "ABC 2", "ABC 3", "DEF", "GHI")) == "ABC 4")
   }
 
 }
