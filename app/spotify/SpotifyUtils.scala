@@ -63,17 +63,11 @@ object SpotifyUtils {
     // create a request for the access and refresh tokens
     val authorizationCodeRequest: AuthorizationCodeRequest = spotifyApi.authorizationCode(code).build
 
-    try {
-      val authorizationCodeCredentials = authorizationCodeRequest.execute
-      // set access and refresh tokens to use continue using spotifyApiUserAuthentication with credentials
-      spotifyApi.setAccessToken(authorizationCodeCredentials.getAccessToken)
-      spotifyApi.setRefreshToken(authorizationCodeCredentials.getRefreshToken)
-      spotifyApi
-    } catch {
-      case e@(_: IOException | _: SpotifyWebApiException) =>
-        println("Error: " + e.getMessage)
-        throw e
-    }
+    val authorizationCodeCredentials = authorizationCodeRequest.execute
+    // set access and refresh tokens to use continue using spotifyApiUserAuthentication with credentials
+    spotifyApi.setAccessToken(authorizationCodeCredentials.getAccessToken)
+    spotifyApi.setRefreshToken(authorizationCodeCredentials.getRefreshToken)
+    spotifyApi
   }
 
   /** Returns all the playlists (public and private) from a user.
