@@ -17,20 +17,17 @@ class MainController @Inject() extends Controller {
   }
 
   // show the "select playlist" page if the user has authenticated
-  def selectPlaylist(codeOption: Option[String]): Action[AnyContent] = codeOption.map(code =>
-    Action {
-      val spotifyApi: SpotifyApi = SpotifyUtils.spotifyApiUserAuthentication(code)
-      Ok(views.html.selectPlaylist(
-        SpotifyUtils.getPlaylistsFromUser(spotifyApi),
-        spotifyApi.getAccessToken
-      ))
-    }).getOrElse(index)
+  def selectPlaylist(code: String): Action[AnyContent] = Action {
+    val spotifyApi: SpotifyApi = SpotifyUtils.spotifyApiUserAuthentication(code)
+    Ok(views.html.selectPlaylist(
+      SpotifyUtils.getPlaylistsFromUser(spotifyApi),
+      spotifyApi.getAccessToken
+    ))
+  }
 
-  def createPlaylist(accessToken: Option[String], playlistId: Option[String]): Action[AnyContent] =
-    (accessToken, playlistId) match {
-      case (Some(token), Some(id)) => Action { Ok(views.html.createPlaylist(SpotifyUtils.createPlaylistSequel(token, id))) }
-      case _ => index
-    }
+  def createPlaylist(accessToken: String, playlistId: String): Action[AnyContent] = Action {
+    Ok(views.html.createPlaylist(SpotifyUtils.createPlaylistSequel(accessToken, playlistId)))
+  }
 
   def about = Action {
     Ok(views.html.about())

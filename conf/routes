@@ -6,10 +6,10 @@
 GET     /                           controllers.MainController.index
 
 # Select a playlist to create a sequel for
-GET     /select-playlist            controllers.MainController.selectPlaylist(code: Option[String])
+GET     /select-playlist            controllers.MainController.selectPlaylist(code: String)
 
 # Create and display the generated playlist
-GET     /create-playlist            controllers.MainController.createPlaylist(accessToken: Option[String], playlistId: Option[String])
+GET     /create-playlist            controllers.MainController.createPlaylist(accessToken: String, playlistId: String)
 
 # About the site
 GET     /about                      controllers.MainController.about()
