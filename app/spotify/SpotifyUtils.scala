@@ -14,6 +14,9 @@ import scala.collection.mutable
 
 object SpotifyUtils {
 
+  // TODO some artists don't work, such as Angels and Airwaves. look into why that's the case
+  // TODO local files cause an error, but there's currently no way to check for local files in the API
+
   // spotify client id and secret
   val clientId = sys.env("SPOTIFY_API_CLIENT_ID")
   val clientSecret = sys.env("SPOTIFY_API_CLIENT_SECRET")
