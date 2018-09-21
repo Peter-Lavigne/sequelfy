@@ -38,14 +38,19 @@ class SpotifyUtilsTest extends FunSuite {
     assert(spotifyApi.getCurrentUsersProfile.build().execute().getEmail contains "@gmail.com")
   }
 
-  test("Getting genres from a track") {
+  test("Getting genres from tracks") {
     val spotifyApi: SpotifyApi = SpotifyUtils.spotifyApiClientCredentials
-    val track: Track = spotifyApi
+    val track1: Track = spotifyApi
       .getTrack("0rgfnZB9zSh7T4hVnqBtnX") // "Can't Hold Me Down" by Dive In
       .build()
       .execute()
-    val genres: Seq[Seq[String]] = SpotifyUtils.getGenresFromTracks(Seq(track))
-    genres should contain (Seq("gauze pop", "metropopolis"))
+    val track2: Track = spotifyApi
+      .getTrack("2AHLyqdUKMvvtYZrvM7Uf6") // "Sugar" by PAWWS
+      .build()
+      .execute()
+
+    val genres: Seq[Seq[String]] = SpotifyUtils.getGenresFromTracks(Seq(track1, track2))
+    genres should contain allOf (Seq("gauze pop", "metropopolis"), Seq("gauze pop", "vapor pop"))
   }
 
   test("Getting frequencies") {
