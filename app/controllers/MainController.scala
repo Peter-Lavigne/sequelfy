@@ -32,4 +32,8 @@ class MainController @Inject() extends Controller {
       case _ => index
     }
 
+  def about = Action {
+    Ok(views.html.about())
+  }
+
 }
