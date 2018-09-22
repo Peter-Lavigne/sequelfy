@@ -12,7 +12,7 @@
     <div id="carouselControls" class="carousel slide" data-ride="carousel" data-interval="false" style="width: 80%; margin: auto">
         <div class="carousel-inner">
             @for(playlist <- playlists) {
-                <div class="carousel-item active">
+                <div class="carousel-item">
                     <img class="d-block w-100" src="@playlist.getImages.headOption.map(_.getUrl).getOrElse(emptyPlaylistImage)" alt="@playlist.getName">
                     <div class="carousel-caption">
                         <a href="/create-playlist?accessToken=@accessToken&playlistId=@playlist.getId" class="btn btn-light btn-x1 border-secondary">@playlist.getName</a>
