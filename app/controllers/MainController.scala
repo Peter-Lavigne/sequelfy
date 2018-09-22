@@ -29,8 +29,4 @@ class MainController @Inject() extends Controller {
     Ok(views.html.createPlaylist(SpotifyUtils.createPlaylistSequel(accessToken, playlistId)))
   }
 
-  def about = Action {
-    Ok(views.html.about())
-  }
-
 }
