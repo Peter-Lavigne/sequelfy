@@ -187,10 +187,10 @@ object SpotifyUtils {
     val tracks: Seq[Track] = getRandomTracksFromPlaylist(playlist, sampleSize).map(_.getTrack)
     val genreCounts: Seq[Seq[String]] = getGenresFromTracks(tracks)
     val genreFrequencies: Map[String, Double] = getFrequencies(genreCounts).filter{
-      case (_, frequency) => frequency > 0.05
+      case (_, frequency) => frequency > 0.04
     }
 
-    val multiplier = 5
+    val multiplier = 8
     val newPlaylistTracks: Seq[PlaylistTrack] = genreFrequencies.flatMap{case (genre, frequency) =>
       getSoundOfPlaylistForGenre(genre, spotifyApi).map(soundOfPlaylist =>
         getRandomTracksFromPlaylist(soundOfPlaylist, (frequency * sampleSize * multiplier).toInt)
