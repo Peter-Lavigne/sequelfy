@@ -190,12 +190,15 @@ object SpotifyUtils {
       case (_, frequency) => frequency > 0.04
     }
 
-    val multiplier = 8
-    val newPlaylistTracks: Seq[PlaylistTrack] = genreFrequencies.flatMap{case (genre, frequency) =>
-      getSoundOfPlaylistForGenre(genre, spotifyApi).map(soundOfPlaylist =>
+    val soundOfPlaylists: Map[Playlist, Double] = genreFrequencies.flatMap{case (genre, frequency) =>
+      getSoundOfPlaylistForGenre(genre, spotifyApi).map(_ -> frequency)}
+
+    val API_LIMIT = 100 // API caps at 100 songs added at a time
+    val multiplier = API_LIMIT / soundOfPlaylists.size
+
+    val newPlaylistTracks: Seq[PlaylistTrack] = soundOfPlaylists.flatMap{case (soundOfPlaylist, frequency) =>
         getRandomTracksFromPlaylist(soundOfPlaylist, (frequency * sampleSize * multiplier).toInt)
-      ).getOrElse(Seq())
-    }.toSeq.take(100) // API caps at 100 songs added at a time
+    }.toSeq.take(API_LIMIT)
 
     val sequelTitle = sequelName(playlist.getName, getPlaylistsFromUser(spotifyApi).map(_.getName))
     val newPlaylist = spotifyApi.createPlaylist(userId, sequelTitle)
