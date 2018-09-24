@@ -14,7 +14,7 @@
             <div class="carousel-item active">
                 <img class="d-block w-100" src="@playlists(0).getImages.headOption.map(_.getUrl).getOrElse(emptyPlaylistImage)" alt="@playlists(0).getName">
                 <div class="carousel-caption">
-                    <a href="/create-playlist?accessToken=@accessToken&playlistId=@playlists(0).getId" class="btn btn-light btn-x1 border-secondary">@playlists(0).getName</a>
+                    <a href="/create-playlist?accessToken=@accessToken&playlistId=@playlists(0).getId" class="btn btn-light btn-x1 border-secondary" style="display: block;white-space: pre-wrap">@playlists(0).getName</a>
                 </div>
             </div>
             @for(playlist <- playlists.drop(1)) {
