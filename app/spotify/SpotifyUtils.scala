@@ -22,9 +22,6 @@ object SpotifyUtils {
   val clientId = sys.env("SPOTIFY_API_CLIENT_ID")
   val clientSecret = sys.env("SPOTIFY_API_CLIENT_SECRET")
 
-  // the URL to redirect to along with a parameter containing the authorization code
-  val redirectUri: URI = SpotifyHttpManager.makeUri("https://sequelfy.com/select-playlist/")
-
   // TODO generate and validate this state
   // https://developer.spotify.com/documentation/general/guides/authorization-guide/#authorization-code-flow
   val state = "x4xkmn9pu3j6ukrs8n"
@@ -34,7 +31,7 @@ object SpotifyUtils {
     new SpotifyApi.Builder()
       .setClientId(clientId)
       .setClientSecret(clientSecret)
-      .setRedirectUri(redirectUri)
+      .setRedirectUri(SpotifyHttpManager.makeUri(redirectUrl))
       .build
 
   // create a SpotifyApi object using the client credentials workflow. no user authentication is required
