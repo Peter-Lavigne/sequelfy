@@ -193,7 +193,7 @@ object SpotifyUtils {
     val soundOfPlaylists: Seq[Playlist] = genres.flatMap(getSoundOfPlaylistForGenre(_, spotifyApi))
 
     val API_LIMIT = 90 // API caps at 100 songs added at a time
-    val songsPerPlaylist = API_LIMIT / soundOfPlaylists.size
+    val songsPerPlaylist = if (soundOfPlaylists.nonEmpty) API_LIMIT / soundOfPlaylists.size else 0
 
     val newPlaylistTracks: Seq[PlaylistTrack] = soundOfPlaylists.flatMap(
       getRandomTracksFromPlaylist(_, songsPerPlaylist)
