@@ -183,22 +183,21 @@ object SpotifyUtils {
       playlistId
     ).build().execute()
 
-    val sampleSize = 30
-    val tracks: Seq[Track] = getRandomTracksFromPlaylist(playlist, sampleSize).map(_.getTrack)
+    val SAMPLE_SIZE = 30
+    val tracks: Seq[Track] = getRandomTracksFromPlaylist(playlist, SAMPLE_SIZE).map(_.getTrack)
     val genreCounts: Seq[Seq[String]] = getGenresFromTracks(tracks)
-    val genreFrequencies: Map[String, Double] = getFrequencies(genreCounts).filter{
-      case (_, frequency) => frequency > 0.04
-    }
 
-    val soundOfPlaylists: Map[Playlist, Double] = genreFrequencies.flatMap{case (genre, frequency) =>
-      getSoundOfPlaylistForGenre(genre, spotifyApi).map(_ -> frequency)}
+    val MIN_FREQUENCY = 0.04
+    val genres: Seq[String] = getFrequencies(genreCounts).filter(_._2 >= MIN_FREQUENCY).keys.toSeq
+
+    val soundOfPlaylists: Seq[Playlist] = genres.flatMap(getSoundOfPlaylistForGenre(_, spotifyApi))
 
     val API_LIMIT = 100 // API caps at 100 songs added at a time
     val songsPerPlaylist = API_LIMIT / soundOfPlaylists.size
 
-    val newPlaylistTracks: Seq[PlaylistTrack] = soundOfPlaylists.flatMap{case (soundOfPlaylist, _) =>
-        getRandomTracksFromPlaylist(soundOfPlaylist, songsPerPlaylist)
-    }.toSeq.take(API_LIMIT)
+    val newPlaylistTracks: Seq[PlaylistTrack] = soundOfPlaylists.flatMap(
+      getRandomTracksFromPlaylist(_, songsPerPlaylist)
+    ).take(API_LIMIT)
 
     val sequelTitle = sequelName(playlist.getName, getPlaylistsFromUser(spotifyApi).map(_.getName))
     val newPlaylist = spotifyApi.createPlaylist(userId, sequelTitle)
