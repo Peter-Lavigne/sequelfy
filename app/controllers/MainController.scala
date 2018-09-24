@@ -13,20 +13,21 @@ class MainController @Inject() extends Controller {
 
   // show the home page
   def index = Action {
-    Ok(views.html.index(SpotifyUtils.authorizationCodeUri("playlist-read-private,playlist-modify-public").toString))
+    Ok(views.html.index(SpotifyUtils.authorizationCodeUriSelectPlaylist("playlist-read-private").toString))
   }
 
   // show the "select playlist" page if the user has authenticated
   def selectPlaylist(code: String): Action[AnyContent] = Action {
     val spotifyApi: SpotifyApi = SpotifyUtils.spotifyApiUserAuthentication(code)
     Ok(views.html.selectPlaylist(
-      SpotifyUtils.getPlaylistsFromUser(spotifyApi),
-      spotifyApi.getAccessToken
+      SpotifyUtils.getPlaylistsFromUser(spotifyApi)
     ))
   }
 
-  def createPlaylist(accessToken: String, playlistId: String): Action[AnyContent] = Action {
-    Ok(views.html.createPlaylist(SpotifyUtils.createPlaylistSequel(accessToken, playlistId)))
+  // creates a playlist
+  // the "state" parameter is the playlist id, but the Spotify API doesn't allow query parameters on redirect URLs
+  def createPlaylist(code: String, state: String): Action[AnyContent] = Action {
+    Ok(views.html.createPlaylist(SpotifyUtils.createPlaylistSequel(code, state)))
   }
 
 }

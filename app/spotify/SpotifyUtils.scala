@@ -30,32 +30,46 @@ object SpotifyUtils {
   val state = "x4xkmn9pu3j6ukrs8n"
 
   // create a spotifyApi object to use the API
-  def createSpotifyApi: SpotifyApi = new SpotifyApi.Builder()
-    .setClientId(clientId)
-    .setClientSecret(clientSecret)
-    .setRedirectUri(redirectUri)
-    .build
+  def createSpotifyApi(redirectUrl: String = "https://sequelfy.com/select-playlist/"): SpotifyApi =
+    new SpotifyApi.Builder()
+      .setClientId(clientId)
+      .setClientSecret(clientSecret)
+      .setRedirectUri(redirectUri)
+      .build
 
   // create a SpotifyApi object using the client credentials workflow. no user authentication is required
   def spotifyApiClientCredentials: SpotifyApi = {
-    val spotifyApi: SpotifyApi = createSpotifyApi
+    val spotifyApi: SpotifyApi = createSpotifyApi()
     val clientCredentialsRequest: ClientCredentialsRequest = spotifyApi.clientCredentials().build()
     // set the access token to continue using the spotifyApi object
     spotifyApi.setAccessToken(clientCredentialsRequest.execute().getAccessToken)
     spotifyApi
   }
 
-  /** Create a link to authorize a spotify account for a given scope
+  /** Create a link to authorize a spotify account for a given scope for selecting a playlist
     *
     * @param scope the authorization scopes needed for the user, in the form (scope1,scope2,...).
     *              see https://developer.spotify.com/documentation/general/guides/scopes/
     */
-  def authorizationCodeUri(scope: String): URI = createSpotifyApi
+  def authorizationCodeUriSelectPlaylist(scope: String): URI = createSpotifyApi()
     .authorizationCodeUri
     .state(state)
     .scope(scope)
     .build
     .execute
+
+  /** Create a link to authorize a spotify account for a given scope for creating a playlist
+    *
+    * @param scope the authorization scopes needed for the user, in the form (scope1,scope2,...).
+    *              see https://developer.spotify.com/documentation/general/guides/scopes/
+    */
+  def authorizationCodeUriCreatePlaylist(scope: String, playlistId: String): URI =
+    createSpotifyApi(redirectUrl = "https://sequelfy.com/create-playlist/")
+      .authorizationCodeUri
+      .state(playlistId)
+      .scope(scope)
+      .build
+      .execute
 
   /** Create a SpotifyApi object using the authorization code flow.
     * See https://developer.spotify.com/documentation/general/guides/authorization-guide/#authorization-code-flow
@@ -63,7 +77,7 @@ object SpotifyUtils {
     * @param code the authorization code received from following the link given by authorizationCodeUri
     */
   def spotifyApiUserAuthentication(code: String): SpotifyApi = {
-    val spotifyApi: SpotifyApi = createSpotifyApi
+    val spotifyApi: SpotifyApi = createSpotifyApi()
     // create a request for the access and refresh tokens
     val authorizationCodeRequest: AuthorizationCodeRequest = spotifyApi.authorizationCode(code).build
 
@@ -92,7 +106,7 @@ object SpotifyUtils {
     * @param refreshToken the refresh token given by an authenticated SpotifyApi object
     */
   def spotifyApiFromRefreshToken(refreshToken: String): SpotifyApi = {
-    val spotifyApi: SpotifyApi = createSpotifyApi
+    val spotifyApi: SpotifyApi = createSpotifyApi()
     spotifyApi.setRefreshToken(refreshToken)
 
     val authorizationCodeRefreshRequest: AuthorizationCodeRefreshRequest  = spotifyApi
@@ -117,7 +131,7 @@ object SpotifyUtils {
     * @param accessToken the access token given by an authenticated SpotifyApi object
     */
   def spotifyApiFromAccessToken(accessToken: String): SpotifyApi = {
-    val spotifyApi: SpotifyApi = createSpotifyApi
+    val spotifyApi: SpotifyApi = createSpotifyApi()
     spotifyApi.setAccessToken(accessToken)
     spotifyApi
   }
@@ -170,13 +184,13 @@ object SpotifyUtils {
   /** Create a playlist based on the given playlist. This method will use the genres of the artists within the playlist
     * to create a new one.
     *
-    * @param accessToken the token used to get a new access token.
-    *                     see https://developer.spotify.com/documentation/general/guides/authorization-guide/#authorization-code-flow
+    * @param code the code used to obtain an access token.
+    *             see https://developer.spotify.com/documentation/general/guides/authorization-guide/#authorization-code-flow
     * @param playlistId the id of the playlist to base the new one off of
     * @return the playlist id of the new playlist
     */
-  def createPlaylistSequel(accessToken: String, playlistId: String): String = {
-    val spotifyApi: SpotifyApi = spotifyApiFromAccessToken(accessToken)
+  def createPlaylistSequel(code: String, playlistId: String): String = {
+    val spotifyApi: SpotifyApi = spotifyApiUserAuthentication(code)
     val userId: String = spotifyApi.getCurrentUsersProfile.build().execute().getId
 
     val playlist = spotifyApi.getPlaylist(

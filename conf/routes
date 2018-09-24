@@ -9,7 +9,7 @@ GET     /                           controllers.MainController.index
 GET     /select-playlist            controllers.MainController.selectPlaylist(code: String)
 
 # Create and display the generated playlist
-GET     /create-playlist            controllers.MainController.createPlaylist(accessToken: String, playlistId: String)
+GET     /create-playlist            controllers.MainController.createPlaylist(code: String, state: String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
