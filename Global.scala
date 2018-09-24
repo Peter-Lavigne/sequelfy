@@ -6,6 +6,7 @@ import scala.concurrent.Future
 object Global extends GlobalSettings {
 
   override def onError(request: RequestHeader, ex: Throwable) = {
+    println(ex.toString)
     Future.successful(InternalServerError(
       views.html.errors.error()
     ))
@@ -18,6 +19,7 @@ object Global extends GlobalSettings {
   }
 
   override def onBadRequest(request: RequestHeader, error: String) = {
+    println(error.toString)
     Future.successful(BadRequest(
       views.html.errors.badRequest()
     ))
