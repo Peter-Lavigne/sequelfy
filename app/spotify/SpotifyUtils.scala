@@ -73,8 +73,9 @@ object SpotifyUtils {
     *
     * @param code the authorization code received from following the link given by authorizationCodeUri
     */
-  def spotifyApiUserAuthentication(code: String): SpotifyApi = {
-    val spotifyApi: SpotifyApi = createSpotifyApi()
+  def spotifyApiUserAuthentication(code: String,
+                                   redirectUrl: String = "https://sequelfy.com/select-playlist/"): SpotifyApi = {
+    val spotifyApi: SpotifyApi = createSpotifyApi(redirectUrl = redirectUrl)
     // create a request for the access and refresh tokens
     val authorizationCodeRequest: AuthorizationCodeRequest = spotifyApi.authorizationCode(code).build
 
@@ -187,7 +188,7 @@ object SpotifyUtils {
     * @return the playlist id of the new playlist
     */
   def createPlaylistSequel(code: String, playlistId: String): String = {
-    val spotifyApi: SpotifyApi = spotifyApiUserAuthentication(code)
+    val spotifyApi: SpotifyApi = spotifyApiUserAuthentication(code, redirectUrl = "https://sequelfy.com/create-playlist/")
     val userId: String = spotifyApi.getCurrentUsersProfile.build().execute().getId
 
     val playlist = spotifyApi.getPlaylist(
