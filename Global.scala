@@ -6,7 +6,7 @@ import scala.concurrent.Future
 object Global extends GlobalSettings {
 
   override def onError(request: RequestHeader, ex: Throwable) = {
-    println(ex.toString)
+    ex.printStackTrace()
     Future.successful(InternalServerError(
       views.html.errors.error()
     ))
