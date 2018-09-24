@@ -192,7 +192,7 @@ object SpotifyUtils {
 
     val soundOfPlaylists: Seq[Playlist] = genres.flatMap(getSoundOfPlaylistForGenre(_, spotifyApi))
 
-    val API_LIMIT = 100 // API caps at 100 songs added at a time
+    val API_LIMIT = 90 // API caps at 100 songs added at a time
     val songsPerPlaylist = API_LIMIT / soundOfPlaylists.size
 
     val newPlaylistTracks: Seq[PlaylistTrack] = soundOfPlaylists.flatMap(
