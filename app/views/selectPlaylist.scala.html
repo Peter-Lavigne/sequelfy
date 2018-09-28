@@ -12,14 +12,8 @@
     <h1 class="mb-5 text-center">Select a playlist</h1>
     <div id="carouselControls" class="carousel slide" data-ride="carousel" data-interval="false" style="width: 80%; margin: auto">
         <div class="carousel-inner">
-            <div class="carousel-item active">
-                <img class="d-block w-100" src="@playlists(0).getImages.headOption.map(_.getUrl).getOrElse(emptyPlaylistImage)" alt="@playlists(0).getName">
-                <div class="carousel-caption">
-                    <a href="@{SpotifyApiWrapper.authUriCreatePlaylist(playlists.head.getId)}" class="btn btn-light btn-x1 border-secondary" style="display: block;white-space: pre-wrap">@playlists(0).getName</a>
-                </div>
-            </div>
-            @for(playlist <- playlists.drop(1)) {
-                <div class="carousel-item">
+            @for((playlist, index) <- playlists.zipWithIndex) {
+                <div class="carousel-item @{if (index == 0) "active" else ""}">
                     <img class="d-block w-100" src="@playlist.getImages.headOption.map(_.getUrl).getOrElse(emptyPlaylistImage)" alt="@playlist.getName">
                     <div class="carousel-caption">
                         <a href="@{SpotifyApiWrapper.authUriCreatePlaylist(playlist.getId)}" class="btn btn-light btn-x1 border-secondary" style="display: block;white-space: pre-wrap">@playlist.getName</a>
