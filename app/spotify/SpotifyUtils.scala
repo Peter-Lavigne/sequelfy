@@ -79,7 +79,7 @@ object SpotifyUtils {
     * @return the playlist id of the new playlist
     */
   def createPlaylistSequel(code: String, playlistId: String): String = {
-    val spotifyApi: SpotifyApi = SpotifyApiWrapper.spotifyApiUserAuthentication(code, redirectUrl = "https://sequelfy.com/create-playlist/")
+    val spotifyApi: SpotifyApi = SpotifyApiWrapper.spotifyApiCreatePlaylist(code)
     val userId: String = spotifyApi.getCurrentUsersProfile.build().execute().getId
 
     val playlist = spotifyApi.getPlaylist(

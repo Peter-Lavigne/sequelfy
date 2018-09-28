@@ -18,7 +18,7 @@ class MainController @Inject() extends Controller {
 
   // show the "select playlist" page if the user has authenticated
   def selectPlaylist(code: String): Action[AnyContent] = Action {
-    val spotifyApi: SpotifyApi = SpotifyApiWrapper.spotifyApiUserAuthentication(code)
+    val spotifyApi: SpotifyApi = SpotifyApiWrapper.spotifyApiSelectPlaylist(code)
     Ok(views.html.selectPlaylist(
       SpotifyUtils.getPlaylistsFromUser(spotifyApi)
     ))

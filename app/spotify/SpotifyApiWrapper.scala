@@ -18,12 +18,16 @@ object SpotifyApiWrapper {
   val clientId = sys.env("SPOTIFY_API_CLIENT_ID")
   val clientSecret = sys.env("SPOTIFY_API_CLIENT_SECRET")
 
+  // redirect urls
+  val SELECT_PLAYLIST_REDIRECT_URL = "https://sequelfy.com/select-playlist/"
+  val CREATE_PLAYLIST_REDIRECT_URL = "https://sequelfy.com/create-playlist/"
+
   // TODO generate and validate this state
   // https://developer.spotify.com/documentation/general/guides/authorization-guide/#authorization-code-flow
   val state = "x4xkmn9pu3j6ukrs8n"
 
   // create a spotifyApi object to use the API
-  def createSpotifyApi(redirectUrl: String = "https://sequelfy.com/select-playlist/"): SpotifyApi =
+  private def createSpotifyApi(redirectUrl: String = "https://sequelfy.com/select-playlist/"): SpotifyApi =
     new SpotifyApi.Builder()
       .setClientId(clientId)
       .setClientSecret(clientSecret)
@@ -55,13 +59,14 @@ object SpotifyApiWrapper {
       .build
       .execute
 
-  /** Create a SpotifyApi object using the authorization code flow.
+  /**
+    * Create a SpotifyApi object using the authorization code flow.
     * See https://developer.spotify.com/documentation/general/guides/authorization-guide/#authorization-code-flow
     *
-    * @param code the authorization code received from following the link given by authorizationCodeUri
+    * @param code        the authorization code returned from following an authorization URI
+    * @param redirectUrl the redirect url that was linked to by Spotify along with the code
     */
-  def spotifyApiUserAuthentication(code: String,
-                                   redirectUrl: String = "https://sequelfy.com/select-playlist/"): SpotifyApi = {
+  private def spotifyApiUserAuthentication(code: String, redirectUrl: String): SpotifyApi = {
     val spotifyApi: SpotifyApi = createSpotifyApi(redirectUrl = redirectUrl)
     // create a request for the access and refresh tokens
     val authorizationCodeRequest: AuthorizationCodeRequest = spotifyApi.authorizationCode(code).build
@@ -70,7 +75,28 @@ object SpotifyApiWrapper {
     // set access and refresh tokens to use continue using spotifyApiUserAuthentication with credentials
     spotifyApi.setAccessToken(authorizationCodeCredentials.getAccessToken)
     spotifyApi.setRefreshToken(authorizationCodeCredentials.getRefreshToken)
+
     spotifyApi
+  }
+
+  /**
+    * Create a SpotifyApi object for selecting a playlist.
+    * The user must have authenticated and been redirected to the select playlist page.
+    *
+    * @param code the authorization code returned from following an authorization URI
+    */
+  def spotifyApiSelectPlaylist(code: String): SpotifyApi = {
+    spotifyApiUserAuthentication(code, SELECT_PLAYLIST_REDIRECT_URL)
+  }
+
+  /**
+    * Create a SpotifyApi object for creating a playlist.
+    * The user must have authenticated and been redirected to the create playlist page.
+    *
+    * @param code the authorization code returned from following an authorization URI
+    */
+  def spotifyApiCreatePlaylist(code: String): SpotifyApi = {
+    spotifyApiUserAuthentication(code, CREATE_PLAYLIST_REDIRECT_URL)
   }
 
 }
