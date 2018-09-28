@@ -14,21 +14,21 @@ import scala.collection.mutable
   */
 class SpotifyUtils(spotifyApi: SpotifyApi) {
 
-  // TODO some artists don't work, such as Angels and Airwaves. look into why that's the case
-  // TODO local files cause an error, but there's currently no way to check for local files in the API
-  // TODO find a way to avoid passing SpotifyApi objects around everywhere. use implicit parameters?
-
-  /** Returns all the playlists (public and private) from a user.
-    *
+  /**
+    * Returns all the playlists (public and private) from a user.
     */
   def getPlaylistsFromUser: Array[PlaylistSimplified] = {
     spotifyApi
       .getListOfCurrentUsersPlaylists
-      .limit(50) // TODO add pagination, the max is 50
+      .limit(50) // TODO add pagination, current max is 50
       .build()
       .execute()
       .getItems
   }
+
+  // TODO some artists don't work, such as Angels and Airwaves. look into why that's the case
+  // TODO local files cause an error, but there's currently no way to check for local files in the API
+  // TODO find a way to avoid passing SpotifyApi objects around everywhere. use implicit parameters?
 
   // retrieve the genres from a track
   def getGenresFromTracks(tracks: Seq[Track]): Seq[Seq[String]] = {
