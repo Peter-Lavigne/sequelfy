@@ -7,7 +7,6 @@ import com.wrapper.spotify.exceptions.SpotifyWebApiException
 import com.wrapper.spotify.model_objects.specification._
 import com.wrapper.spotify.{SpotifyApi, SpotifyHttpManager}
 import com.wrapper.spotify.requests.authorization.authorization_code.{AuthorizationCodeRefreshRequest, AuthorizationCodeRequest}
-import com.wrapper.spotify.requests.authorization.client_credentials.ClientCredentialsRequest
 
 import scala.util.Random
 import scala.collection.mutable
@@ -33,15 +32,6 @@ object SpotifyUtils {
       .setClientSecret(clientSecret)
       .setRedirectUri(SpotifyHttpManager.makeUri(redirectUrl))
       .build
-
-  // create a SpotifyApi object using the client credentials workflow. no user authentication is required
-  def spotifyApiClientCredentials: SpotifyApi = {
-    val spotifyApi: SpotifyApi = createSpotifyApi()
-    val clientCredentialsRequest: ClientCredentialsRequest = spotifyApi.clientCredentials().build()
-    // set the access token to continue using the spotifyApi object
-    spotifyApi.setAccessToken(clientCredentialsRequest.execute().getAccessToken)
-    spotifyApi
-  }
 
   /** Create a link to authorize a spotify account for a given scope for selecting a playlist
     *
@@ -135,8 +125,8 @@ object SpotifyUtils {
   }
 
   // retrieve the genres from a track
-  def getGenresFromTracks(tracks: Seq[Track]): Seq[Seq[String]] = {
-    val artists = spotifyApiClientCredentials
+  def getGenresFromTracks(tracks: Seq[Track], spotifyApi: SpotifyApi): Seq[Seq[String]] = {
+    val artists = spotifyApi
       .getSeveralArtists(tracks.flatMap(_.getArtists).map(_.getId): _*)
       .build()
       .execute()
@@ -198,7 +188,7 @@ object SpotifyUtils {
 
     val SAMPLE_SIZE = 30
     val tracks: Seq[Track] = getRandomTracksFromPlaylist(playlist, SAMPLE_SIZE).map(_.getTrack)
-    val genreCounts: Seq[Seq[String]] = getGenresFromTracks(tracks)
+    val genreCounts: Seq[Seq[String]] = getGenresFromTracks(tracks, spotifyApi)
 
     val MIN_FREQUENCY = 0.04
     val genres: Seq[String] = getFrequencies(genreCounts).filter(_._2 >= MIN_FREQUENCY).keys.toSeq

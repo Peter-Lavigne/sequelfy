@@ -10,18 +10,6 @@ import Matchers._
 
 class SpotifyUtilsTest extends FunSuite {
 
-  test("API client credentials flow works") {
-    // create a spotifyApi object to use the API
-    val spotifyApi: SpotifyApi = SpotifyUtils.spotifyApiClientCredentials
-
-    // get the artist "Dive In" by their ID
-    val getArtistRequest: GetArtistRequest = spotifyApi.getArtist("3MUHvC1BahPXrKbKZjkTwC").build()
-    val artist: Artist = getArtistRequest.execute()
-
-    // confirm we got the right artist
-    assert(artist.getName == "Dive In")
-  }
-
   test("API authorization code flow: generate an authorization code") {
     val uri: URI = SpotifyUtils.authorizationCodeUriSelectPlaylist("user-read-email")
     assert(uri.toString.contains("spotify.com"))
@@ -39,7 +27,9 @@ class SpotifyUtilsTest extends FunSuite {
   }
 
   test("Getting genres from tracks") {
-    val spotifyApi: SpotifyApi = SpotifyUtils.spotifyApiClientCredentials
+    val code: String = sys.env("SPOTIFY_TESTING_AUTHORIZATION_CODE")
+
+    val spotifyApi: SpotifyApi = SpotifyUtils.spotifyApiUserAuthentication(code)
     val track1: Track = spotifyApi
       .getTrack("0rgfnZB9zSh7T4hVnqBtnX") // "Can't Hold Me Down" by Dive In
       .build()
@@ -49,7 +39,7 @@ class SpotifyUtilsTest extends FunSuite {
       .build()
       .execute()
 
-    val genres: Seq[Seq[String]] = SpotifyUtils.getGenresFromTracks(Seq(track1, track2))
+    val genres: Seq[Seq[String]] = SpotifyUtils.getGenresFromTracks(Seq(track1, track2), spotifyApi)
     genres should contain allOf (Seq("gauze pop", "metropopolis"), Seq("gauze pop", "vapor pop"))
   }
 
