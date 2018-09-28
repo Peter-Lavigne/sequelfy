@@ -6,13 +6,9 @@ import com.wrapper.spotify.{SpotifyApi, SpotifyHttpManager}
 import com.wrapper.spotify.requests.authorization.authorization_code.AuthorizationCodeRequest
 
 /**
-  * A wrapper around the Spotify API https://github.com/thelinmichael/spotify-web-api-java
-  *
-  * This object simplifies the API to be more Scala-friendly (removing some of the builder patterns).
-  * Since most API calls need a logged-in user, all SpotifyApi objects use Spotify's authorization code flow.
-  * See https://developer.spotify.com/documentation/general/guides/authorization-guide/#authorization-code-flow
+  * Contains utility classes for creating and authorizing SpotifyApi objects.
   */
-object SpotifyApiWrapper {
+object SpotifyApiCreator {
 
   // spotify client id and secret
   val clientId = sys.env("SPOTIFY_API_CLIENT_ID")

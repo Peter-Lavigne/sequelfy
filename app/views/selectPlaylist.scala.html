@@ -2,7 +2,7 @@
  * Page for selecting which playlist you want to Sequelfy
  *@
 @import com.wrapper.spotify.model_objects.specification.PlaylistSimplified
-@import spotify.SpotifyApiWrapper
+@import spotify.SpotifyApiCreator
 @(playlists: Seq[PlaylistSimplified])
 
 @emptyPlaylistImage = @{routes.Assets.versioned("images/empty-playlist.png")}
@@ -16,7 +16,7 @@
                 <div class="carousel-item @{if (index == 0) "active" else ""}">
                     <img class="d-block w-100" src="@playlist.getImages.headOption.map(_.getUrl).getOrElse(emptyPlaylistImage)" alt="@playlist.getName">
                     <div class="carousel-caption">
-                        <a href="@{SpotifyApiWrapper.authUriCreatePlaylist(playlist.getId)}" class="btn btn-light btn-x1 border-secondary" style="display: block;white-space: pre-wrap">@playlist.getName</a>
+                        <a href="@{SpotifyApiCreator.authUriCreatePlaylist(playlist.getId)}" class="btn btn-light btn-x1 border-secondary" style="display: block;white-space: pre-wrap">@playlist.getName</a>
                     </div>
                 </div>
             }

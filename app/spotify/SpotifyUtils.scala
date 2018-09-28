@@ -6,7 +6,13 @@ import com.wrapper.spotify.SpotifyApi
 import scala.util.Random
 import scala.collection.mutable
 
-object SpotifyUtils {
+/**
+  * Utility class for performing actions with a Spotify API. Some methods can only be used with SpotifyAPI objects
+  * that have the "playlist-modify-public" scope enabled, and are marked as such.
+  *
+  * @param spotifyApi the API class retrieved from using SpotifyApiCreator's methods
+  */
+class SpotifyUtils(spotifyApi: SpotifyApi) {
 
   // TODO some artists don't work, such as Angels and Airwaves. look into why that's the case
   // TODO local files cause an error, but there's currently no way to check for local files in the API
@@ -14,10 +20,9 @@ object SpotifyUtils {
 
   /** Returns all the playlists (public and private) from a user.
     *
-    * @param spotifyApiUserAuth a SpotifyApi object obtained from calling spotifyApiUserAuthentication
     */
-  def getPlaylistsFromUser(spotifyApiUserAuth: SpotifyApi): Array[PlaylistSimplified] = {
-    spotifyApiUserAuth
+  def getPlaylistsFromUser: Array[PlaylistSimplified] = {
+    spotifyApi
       .getListOfCurrentUsersPlaylists
       .limit(50) // TODO add pagination, the max is 50
       .build()
@@ -26,7 +31,7 @@ object SpotifyUtils {
   }
 
   // retrieve the genres from a track
-  def getGenresFromTracks(tracks: Seq[Track], spotifyApi: SpotifyApi): Seq[Seq[String]] = {
+  def getGenresFromTracks(tracks: Seq[Track]): Seq[Seq[String]] = {
     val artists = spotifyApi
       .getSeveralArtists(tracks.flatMap(_.getArtists).map(_.getId): _*)
       .build()
@@ -51,7 +56,7 @@ object SpotifyUtils {
   }
 
   // returns Spotify's "The Sound of ..." playlist for a given genre
-  def getSoundOfPlaylistForGenre(genre: String, spotifyApi: SpotifyApi): Option[Playlist] = {
+  def getSoundOfPlaylistForGenre(genre: String): Option[Playlist] = {
     val userId: String = spotifyApi.getCurrentUsersProfile.build().execute().getId
     val soundOfPlaylist = spotifyApi.searchPlaylists(s"The Sound of $genre").build().execute().getItems.headOption
     soundOfPlaylist.map(playlist =>
@@ -73,13 +78,10 @@ object SpotifyUtils {
   /** Create a playlist based on the given playlist. This method will use the genres of the artists within the playlist
     * to create a new one.
     *
-    * @param code the code used to obtain an access token.
-    *             see https://developer.spotify.com/documentation/general/guides/authorization-guide/#authorization-code-flow
     * @param playlistId the id of the playlist to base the new one off of
     * @return the playlist id of the new playlist
     */
-  def createPlaylistSequel(code: String, playlistId: String): String = {
-    val spotifyApi: SpotifyApi = SpotifyApiWrapper.spotifyApiCreatePlaylist(code)
+  def createPlaylistSequel(playlistId: String): String = {
     val userId: String = spotifyApi.getCurrentUsersProfile.build().execute().getId
 
     val playlist = spotifyApi.getPlaylist(
@@ -89,12 +91,12 @@ object SpotifyUtils {
 
     val SAMPLE_SIZE = 30
     val tracks: Seq[Track] = getRandomTracksFromPlaylist(playlist, SAMPLE_SIZE).map(_.getTrack)
-    val genreCounts: Seq[Seq[String]] = getGenresFromTracks(tracks, spotifyApi)
+    val genreCounts: Seq[Seq[String]] = getGenresFromTracks(tracks)
 
     val MIN_FREQUENCY = 0.04
     val genres: Seq[String] = getFrequencies(genreCounts).filter(_._2 >= MIN_FREQUENCY).keys.toSeq
 
-    val soundOfPlaylists: Seq[Playlist] = genres.flatMap(getSoundOfPlaylistForGenre(_, spotifyApi))
+    val soundOfPlaylists: Seq[Playlist] = genres.flatMap(getSoundOfPlaylistForGenre)
 
     val API_LIMIT = 90 // API caps at 100 songs added at a time
     // TODO debug and fix empty playlists causing an error
@@ -104,7 +106,7 @@ object SpotifyUtils {
       getRandomTracksFromPlaylist(_, songsPerPlaylist)
     ).take(API_LIMIT)
 
-    val sequelTitle = sequelName(playlist.getName, getPlaylistsFromUser(spotifyApi).map(_.getName))
+    val sequelTitle = sequelName(playlist.getName, getPlaylistsFromUser.map(_.getName))
     val newPlaylist = spotifyApi.createPlaylist(userId, sequelTitle)
       .public_(true)
       .description(s"A sequel to the playlist ${playlist.getName} made using Sequelfy.com")
