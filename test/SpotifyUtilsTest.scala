@@ -10,7 +10,7 @@ import Matchers._
 class SpotifyUtilsTest extends FunSuite {
 
   test("API authorization code flow: generate an authorization code") {
-    val uri: URI = SpotifyApiWrapper.authorizationCodeUriSelectPlaylist("user-read-email")
+    val uri: URI = SpotifyApiWrapper.authUriSelectPlaylist
     assert(uri.toString.contains("spotify.com"))
     println("URI: " + uri.toString)
   }

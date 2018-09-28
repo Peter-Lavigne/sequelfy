@@ -22,42 +22,53 @@ object SpotifyApiWrapper {
   val SELECT_PLAYLIST_REDIRECT_URL = "https://sequelfy.com/select-playlist/"
   val CREATE_PLAYLIST_REDIRECT_URL = "https://sequelfy.com/create-playlist/"
 
-  // TODO generate and validate this state
-  // https://developer.spotify.com/documentation/general/guides/authorization-guide/#authorization-code-flow
-  val state = "x4xkmn9pu3j6ukrs8n"
+  // authorization scopes. see https://developer.spotify.com/documentation/general/guides/scopes/
+  val SELECT_PLAYLIST_SCOPES = "playlist-read-private"
+  val CREATE_PLAYLIST_SCOPES = "playlist-read-private,playlist-modify-public"
 
+  /**
+    * Create a basic spotifyApi object to use the API. User authorizations must be added separately.
+    *
+    * @param redirectUrl the URL that this object will return to (if creating an authentication URI)
+    *                    or authenticate against (if authenticating a code)
+    */
   // create a spotifyApi object to use the API
-  private def createSpotifyApi(redirectUrl: String = "https://sequelfy.com/select-playlist/"): SpotifyApi =
+  private def createSpotifyApi(redirectUrl: String): SpotifyApi =
     new SpotifyApi.Builder()
       .setClientId(clientId)
       .setClientSecret(clientSecret)
       .setRedirectUri(SpotifyHttpManager.makeUri(redirectUrl))
       .build
 
-  /** Create a link to authorize a spotify account for a given scope for selecting a playlist
+  /**
+    * Create a link that will authorize a spotify account.
     *
-    * @param scope the authorization scopes needed for the user, in the form (scope1,scope2,...).
-    *              see https://developer.spotify.com/documentation/general/guides/scopes/
+    * @param redirectUrl the URL to redirect the user to after authenticating
+    * @param scope       Spotify scopes to authorize the user for.
+    *                    See https://developer.spotify.com/documentation/general/guides/scopes/
+    * @param state       the state to pass to the redirect url, this information will be available for the
+    *                    next request to use
     */
-  def authorizationCodeUriSelectPlaylist(scope: String): URI = createSpotifyApi()
-    .authorizationCodeUri
-    .state(state)
-    .scope(scope)
-    .build
-    .execute
-
-  /** Create a link to authorize a spotify account for a given scope for creating a playlist
-    *
-    * @param scope the authorization scopes needed for the user, in the form (scope1,scope2,...).
-    *              see https://developer.spotify.com/documentation/general/guides/scopes/
-    */
-  def authorizationCodeUriCreatePlaylist(scope: String, playlistId: String): URI =
-    createSpotifyApi(redirectUrl = "https://sequelfy.com/create-playlist/")
+  private def authUri(redirectUrl: String, scope: String, state: String = ""): URI =
+    createSpotifyApi(redirectUrl)
       .authorizationCodeUri
-      .state(playlistId)
+      .state(state)
       .scope(scope)
       .build
       .execute
+
+  /**
+    * Create a link that will authorize a spotify account for selecting a playlist.
+    */
+  def authUriSelectPlaylist: URI = authUri(SELECT_PLAYLIST_REDIRECT_URL, SELECT_PLAYLIST_SCOPES)
+
+  /**
+    * Create a link that will authorize a spotify account for creating a playlist.
+    *
+    * @param playlistId the Spotify id for the playlist to create a sequel for
+    */
+  def authUriCreatePlaylist(playlistId: String): URI =
+    authUri(CREATE_PLAYLIST_REDIRECT_URL, CREATE_PLAYLIST_SCOPES,  playlistId)
 
   /**
     * Create a SpotifyApi object using the authorization code flow.

@@ -13,7 +13,7 @@ class MainController @Inject() extends Controller {
 
   // show the home page
   def index = Action {
-    Ok(views.html.index(SpotifyApiWrapper.authorizationCodeUriSelectPlaylist("playlist-read-private").toString))
+    Ok(views.html.index(SpotifyApiWrapper.authUriSelectPlaylist))
   }
 
   // show the "select playlist" page if the user has authenticated
