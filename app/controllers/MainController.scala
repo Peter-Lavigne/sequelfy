@@ -3,7 +3,7 @@ package controllers
 import com.wrapper.spotify.SpotifyApi
 import javax.inject.{Inject, Singleton}
 import play.api.mvc.{Action, AnyContent, Controller}
-import spotify.SpotifyUtils
+import spotify.{SpotifyApiWrapper, SpotifyUtils}
 
 /**
  * This controller handles requests to the home page.
@@ -13,12 +13,12 @@ class MainController @Inject() extends Controller {
 
   // show the home page
   def index = Action {
-    Ok(views.html.index(SpotifyUtils.authorizationCodeUriSelectPlaylist("playlist-read-private").toString))
+    Ok(views.html.index(SpotifyApiWrapper.authorizationCodeUriSelectPlaylist("playlist-read-private").toString))
   }
 
   // show the "select playlist" page if the user has authenticated
   def selectPlaylist(code: String): Action[AnyContent] = Action {
-    val spotifyApi: SpotifyApi = SpotifyUtils.spotifyApiUserAuthentication(code)
+    val spotifyApi: SpotifyApi = SpotifyApiWrapper.spotifyApiUserAuthentication(code)
     Ok(views.html.selectPlaylist(
       SpotifyUtils.getPlaylistsFromUser(spotifyApi)
     ))

@@ -1,17 +1,16 @@
 import java.net.URI
 
-import com.wrapper.spotify.model_objects.specification.{Artist, Track}
-import com.wrapper.spotify.requests.data.artists.GetArtistRequest
+import com.wrapper.spotify.model_objects.specification.Track
 import com.wrapper.spotify.SpotifyApi
 import org.scalatest.FunSuite
-import spotify.SpotifyUtils
+import spotify.{SpotifyApiWrapper, SpotifyUtils}
 import org.scalatest._
 import Matchers._
 
 class SpotifyUtilsTest extends FunSuite {
 
   test("API authorization code flow: generate an authorization code") {
-    val uri: URI = SpotifyUtils.authorizationCodeUriSelectPlaylist("user-read-email")
+    val uri: URI = SpotifyApiWrapper.authorizationCodeUriSelectPlaylist("user-read-email")
     assert(uri.toString.contains("spotify.com"))
     println("URI: " + uri.toString)
   }
@@ -21,7 +20,7 @@ class SpotifyUtilsTest extends FunSuite {
     val code: String = sys.env("SPOTIFY_TESTING_AUTHORIZATION_CODE")
 
     // create a spotifyApi object to use the API
-    val spotifyApi: SpotifyApi = SpotifyUtils.spotifyApiUserAuthentication(code)
+    val spotifyApi: SpotifyApi = SpotifyApiWrapper.spotifyApiUserAuthentication(code)
 
     assert(spotifyApi.getCurrentUsersProfile.build().execute().getEmail contains "@gmail.com")
   }
@@ -29,7 +28,7 @@ class SpotifyUtilsTest extends FunSuite {
   test("Getting genres from tracks") {
     val code: String = sys.env("SPOTIFY_TESTING_AUTHORIZATION_CODE")
 
-    val spotifyApi: SpotifyApi = SpotifyUtils.spotifyApiUserAuthentication(code)
+    val spotifyApi: SpotifyApi = SpotifyApiWrapper.spotifyApiUserAuthentication(code)
     val track1: Track = spotifyApi
       .getTrack("0rgfnZB9zSh7T4hVnqBtnX") // "Can't Hold Me Down" by Dive In
       .build()
@@ -59,7 +58,7 @@ class SpotifyUtilsTest extends FunSuite {
     val code: String = sys.env("SPOTIFY_TESTING_AUTHORIZATION_CODE")
 
     // create a spotifyApi object to use the API
-    val spotifyApi: SpotifyApi = SpotifyUtils.spotifyApiUserAuthentication(code)
+    val spotifyApi: SpotifyApi = SpotifyApiWrapper.spotifyApiUserAuthentication(code)
 
     val playlist = SpotifyUtils.getSoundOfPlaylistForGenre("gauze pop", spotifyApi)
 
@@ -72,7 +71,7 @@ class SpotifyUtilsTest extends FunSuite {
     val code: String = sys.env("SPOTIFY_TESTING_AUTHORIZATION_CODE")
 
     // create a spotifyApi object to use the API
-    val spotifyApi: SpotifyApi = SpotifyUtils.spotifyApiUserAuthentication(code)
+    val spotifyApi: SpotifyApi = SpotifyApiWrapper.spotifyApiUserAuthentication(code)
 
     val playlist = SpotifyUtils.getSoundOfPlaylistForGenre("gauze pop", spotifyApi)
     assert(playlist.isDefined)
