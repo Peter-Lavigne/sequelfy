@@ -1,12 +1,10 @@
 package spotify
 
-import java.io.IOException
 import java.net.URI
 
-import com.wrapper.spotify.exceptions.SpotifyWebApiException
 import com.wrapper.spotify.model_objects.specification._
 import com.wrapper.spotify.{SpotifyApi, SpotifyHttpManager}
-import com.wrapper.spotify.requests.authorization.authorization_code.{AuthorizationCodeRefreshRequest, AuthorizationCodeRequest}
+import com.wrapper.spotify.requests.authorization.authorization_code.AuthorizationCodeRequest
 
 import scala.util.Random
 import scala.collection.mutable
@@ -87,41 +85,6 @@ object SpotifyUtils {
       .build()
       .execute()
       .getItems
-  }
-
-  /** Creates a SpotifyApi object from a refresh token.
-    *
-    * @param refreshToken the refresh token given by an authenticated SpotifyApi object
-    */
-  def spotifyApiFromRefreshToken(refreshToken: String): SpotifyApi = {
-    val spotifyApi: SpotifyApi = createSpotifyApi()
-    spotifyApi.setRefreshToken(refreshToken)
-
-    val authorizationCodeRefreshRequest: AuthorizationCodeRefreshRequest  = spotifyApi
-      .authorizationCodeRefresh()
-      .build()
-
-    try {
-      val authorizationCodeCredentials = authorizationCodeRefreshRequest.execute
-      // set access and refresh tokens to use continue using spotifyApiUserAuthentication with credentials
-      spotifyApi.setAccessToken(authorizationCodeCredentials.getAccessToken)
-      spotifyApi.setRefreshToken(authorizationCodeCredentials.getRefreshToken)
-      spotifyApi
-    } catch {
-      case e@(_: IOException | _: SpotifyWebApiException) =>
-        println("Error: " + e.getMessage)
-        throw e
-    }
-  }
-
-  /** Creates a SpotifyApi object from an access token.
-    *
-    * @param accessToken the access token given by an authenticated SpotifyApi object
-    */
-  def spotifyApiFromAccessToken(accessToken: String): SpotifyApi = {
-    val spotifyApi: SpotifyApi = createSpotifyApi()
-    spotifyApi.setAccessToken(accessToken)
-    spotifyApi
   }
 
   // retrieve the genres from a track

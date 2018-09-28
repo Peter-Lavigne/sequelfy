@@ -68,11 +68,11 @@ class SpotifyUtilsTest extends FunSuite {
   }
 
   test("Getting random tracks from playlist") {
-    // manually enter a token
-    val accessToken: String = sys.env("SPOTIFY_TESTING_ACCESS_TOKEN")
+    // manually enter a code (use the previous test to generate a code)
+    val code: String = sys.env("SPOTIFY_TESTING_AUTHORIZATION_CODE")
 
     // create a spotifyApi object to use the API
-    val spotifyApi: SpotifyApi = SpotifyUtils.spotifyApiFromAccessToken(accessToken)
+    val spotifyApi: SpotifyApi = SpotifyUtils.spotifyApiUserAuthentication(code)
 
     val playlist = SpotifyUtils.getSoundOfPlaylistForGenre("gauze pop", spotifyApi)
     assert(playlist.isDefined)
