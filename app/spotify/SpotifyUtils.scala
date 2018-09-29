@@ -14,8 +14,14 @@ import scala.collection.mutable
   */
 class SpotifyUtils(spotifyApi: SpotifyApi) {
 
+  // number of songs to sample from the source playlist
   val SOURCE_PLAYLIST_SAMPLE_SIZE = 30
 
+  // the minimum frequency that genres should appear in the sampled source playlists
+  // raising this value increases the variety of genres in sequel playlists, but increases creation time
+  val SOURCE_PLAYLIST_MIN_GENRE_FREQUENCY = 0.04
+
+  // the id of the authenticated user, used by several API calls
   val userId: String = spotifyApi.getCurrentUsersProfile.build().execute().getId
 
   /**
@@ -40,34 +46,56 @@ class SpotifyUtils(spotifyApi: SpotifyApi) {
     Random.shuffle(playlist.getTracks.getItems.toSeq).take(sampleSize).map(_.getTrack)
   }
 
-  // TODO some artists don't work, such as Angels and Airwaves. look into why that's the case
-  // TODO local files cause an error, but there's currently no way to check for local files in the API
-  // TODO find a way to avoid passing SpotifyApi objects around everywhere. use implicit parameters?
+  /**
+    * Calculates the frequency at which each element occurs in a 2D Seq. Elements in the subsequences are
+    * given value relative to how many elements are in that sublist.
+    *
+    * For example, getFrequencies(Seq(Seq("A"), Seq("B", "C")) returns Map("A" -> 0.5, "B" -> 0.25, "C" -> 0.25
+    *
+    * @param elements the 2D Seq containing the elements to count
+    */
+  def getFrequencies[A](elements: Seq[Seq[A]]): Seq[(A, Double)] = {
+    val frequencies = mutable.Map[A, Double]()
+    for (inner <- elements; a <- inner) {
+      val current = frequencies.getOrElse(a, 0.0)
+      val addition = 1.0 / inner.size / elements.size
+      frequencies(a) = current + addition
+    }
+    frequencies.toSeq
+  }
 
-  // retrieve the genres from a track
-  def getGenresFromTracks(tracks: Seq[Track]): Seq[Seq[String]] = {
-    val artists = spotifyApi
+  /**
+    * Returns the Artists of given Tracks.
+    */
+  def getArtistsFromTracks(tracks: Seq[Track]): Seq[Artist] = {
+    spotifyApi
       .getSeveralArtists(tracks.flatMap(_.getArtists).map(_.getId): _*)
       .build()
       .execute()
-
-    val idToGenres: Map[String, Seq[String]] = Map(artists.map(artist => artist.getId -> artist.getGenres.toSeq): _*)
-    tracks.flatMap(_.getArtists.map(artist => idToGenres(artist.getId)))
   }
 
-  // returns the frequency at which each element occurs. elements in the subsequences are given value relative to
-  // how many elements are in that sublist.
-  //
-  // for example, getFrequencies(Seq(Seq("A"), Seq("B", "C")) returns Map("A" -> 0.5, "B" -> 0.25, "C" -> 0.25
-  def getFrequencies[A](elements: Seq[Seq[A]]): Map[A, Double] = {
-    val frequencies = mutable.Map[A, Double]()
-    for (inner <- elements; a <- inner) {
-      val current: Double = frequencies.getOrElse(a, 0.0)
-      val addition: Double = 1.0 / inner.size / elements.size
-      frequencies(a) = current + addition
-    }
-    frequencies.toMap
+  /**
+    * Returns the genres of a given collection of Tracks, using the genre of their artists.
+    *
+    * NOTE: I could have used the genre of the album they're on, but I'm not confident that
+    * there will be always be data for album genres.
+    *
+    * @param tracks       the Tracks to compute the genres of
+    * @param minFrequency the minimum frequency that a genre must appear within the tracks to be included in the result.
+    *                     this should be a number in the range [0.0, 1.0], where 0.0 returns all genres, and 1.0 only
+    *                     returns a result if every track is a single genre.
+    */
+  def getGenresFromTracks(tracks: Seq[Track], minFrequency: Double): Seq[String] = {
+    val artists = getArtistsFromTracks(tracks)
+    val artistIdToGenres: Map[String, Seq[String]] =
+      artists.map(artist => artist.getId -> artist.getGenres.toSeq).toMap
+    val tracksGenres: Seq[Seq[String]] = tracks.flatMap(_.getArtists.map(artist => artistIdToGenres(artist.getId)))
+    getFrequencies(tracksGenres).filter(_._2 >= minFrequency).map(_._1)
   }
+
+  // TODO some artists don't work, such as Angels and Airwaves. look into why that's the case
+  // TODO local files cause an error, but there's currently no way to check for local files in the API
+  // TODO find a way to avoid passing SpotifyApi objects around everywhere. use implicit parameters?
 
   // returns Spotify's "The Sound of ..." playlist for a given genre
   def getSoundOfPlaylistForGenre(genre: String): Option[Playlist] = {
@@ -96,14 +124,17 @@ class SpotifyUtils(spotifyApi: SpotifyApi) {
       sourcePlaylistId
     ).build().execute()
 
-    val sourcePlaylistTracks: Seq[Track] = samplePlaylist(playlist, SOURCE_PLAYLIST_SAMPLE_SIZE)
+    val sourcePlaylistTracks: Seq[Track] = samplePlaylist(
+      playlist,
+      SOURCE_PLAYLIST_SAMPLE_SIZE
+    )
 
-    val genreCounts: Seq[Seq[String]] = getGenresFromTracks(sourcePlaylistTracks)
+    val sourcePlaylistGenres: Seq[String] = getGenresFromTracks(
+      sourcePlaylistTracks,
+      SOURCE_PLAYLIST_MIN_GENRE_FREQUENCY
+    )
 
-    val MIN_FREQUENCY = 0.04
-    val genres: Seq[String] = getFrequencies(genreCounts).filter(_._2 >= MIN_FREQUENCY).keys.toSeq
-
-    val soundOfPlaylists: Seq[Playlist] = genres.flatMap(getSoundOfPlaylistForGenre)
+    val soundOfPlaylists: Seq[Playlist] = sourcePlaylistGenres.flatMap(getSoundOfPlaylistForGenre)
 
     val API_LIMIT = 90 // API caps at 100 songs added at a time
     // TODO debug and fix empty playlists causing an error
