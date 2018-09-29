@@ -21,6 +21,10 @@ class SpotifyUtils(spotifyApi: SpotifyApi) {
   // raising this value increases the variety of genres in sequel playlists, but increases creation time
   val SOURCE_PLAYLIST_MIN_GENRE_FREQUENCY = 0.04
 
+  // the API limits playlists added to a playlist to 100. I was having issues passing 100 elements to it,
+  // so I've lowered it to 90 just to be safe.
+  val ADD_TO_PLAYLIST_API_LIMIT = 90
+
   // the id of the authenticated user, used by several API calls
   val userId: String = spotifyApi.getCurrentUsersProfile.build().execute().getId
 
@@ -35,6 +39,11 @@ class SpotifyUtils(spotifyApi: SpotifyApi) {
       .execute()
       .getItems
   }
+
+  /**
+    * Returns a Playlist object for a given Spotify playlist ID
+    */
+  def getPlaylistFromId(playlistId: String): Playlist = spotifyApi.getPlaylist(userId, playlistId).build().execute()
 
   /**
     * Takes a random sample (non-repeating) of Tracks from a Playlist.
@@ -93,18 +102,22 @@ class SpotifyUtils(spotifyApi: SpotifyApi) {
     getFrequencies(tracksGenres).filter(_._2 >= minFrequency).map(_._1)
   }
 
-  // TODO some artists don't work, such as Angels and Airwaves. look into why that's the case
-  // TODO local files cause an error, but there's currently no way to check for local files in the API
-  // TODO find a way to avoid passing SpotifyApi objects around everywhere. use implicit parameters?
-
-  // returns Spotify's "The Sound of ..." playlist for a given genre
-  def getSoundOfPlaylistForGenre(genre: String): Option[Playlist] = {
-    val userId: String = spotifyApi.getCurrentUsersProfile.build().execute().getId
-    val soundOfPlaylist = spotifyApi.searchPlaylists(s"The Sound of $genre").build().execute().getItems.headOption
-    soundOfPlaylist.map(playlist =>
-      spotifyApi.getPlaylist(userId, playlist.getId).build().execute()
-    )
+  /**
+    * Returns Spotify's "The Sound of 'genre'" playlist for a given genre.
+    *
+    * Known bug: a playlist is not always found, so an Option is returned.
+    *
+    * @param genre the genre to fins the playlist for
+    */
+  def getPlaylistForGenre(genre: String): Option[Playlist] = {
+    val soundOfPlaylist: Option[PlaylistSimplified] =
+      spotifyApi.searchPlaylists(s"The Sound of $genre").build().execute().getItems.headOption
+    soundOfPlaylist.map(p => getPlaylistFromId(p.getId))
   }
+
+  // TODO some artists don't return a Sound of Playlist, such as Angels and Airwaves
+  // TODO local files cause an error, but there's currently no way to check for local files in the API
+  // TODO passing an empty playlist causes an error
 
   // appends a digit to the end of 'name' (starting with 2) that doesn't conflict with any other names
   def sequelName(name: String, playlists: Seq[String]): String = {
@@ -119,10 +132,7 @@ class SpotifyUtils(spotifyApi: SpotifyApi) {
     * @return                 the playlist id of the new playlist
     */
   def createPlaylistSequel(sourcePlaylistId: String): String = {
-    val playlist: Playlist = spotifyApi.getPlaylist(
-      userId,
-      sourcePlaylistId
-    ).build().execute()
+    val playlist: Playlist = getPlaylistFromId(sourcePlaylistId)
 
     val sourcePlaylistTracks: Seq[Track] = samplePlaylist(
       playlist,
@@ -134,15 +144,15 @@ class SpotifyUtils(spotifyApi: SpotifyApi) {
       SOURCE_PLAYLIST_MIN_GENRE_FREQUENCY
     )
 
-    val soundOfPlaylists: Seq[Playlist] = sourcePlaylistGenres.flatMap(getSoundOfPlaylistForGenre)
+    // for now, ignore genres that we cannot find a playlist for
+    val genrePlaylists: Seq[Playlist] = sourcePlaylistGenres.flatMap(getPlaylistForGenre)
 
-    val API_LIMIT = 90 // API caps at 100 songs added at a time
-    // TODO debug and fix empty playlists causing an error
-    val songsPerPlaylist = if (soundOfPlaylists.nonEmpty) API_LIMIT / soundOfPlaylists.size else 0
+    // if no genres were found, create an empty playlist
+    val sampledTracksPerGenre = if (genrePlaylists.nonEmpty) ADD_TO_PLAYLIST_API_LIMIT / genrePlaylists.size else 0
 
-    val newPlaylistTracks: Seq[Track] = soundOfPlaylists.flatMap(
-      samplePlaylist(_, songsPerPlaylist)
-    ).take(API_LIMIT)
+    val newPlaylistTracks: Seq[Track] = genrePlaylists.flatMap(
+      samplePlaylist(_, sampledTracksPerGenre)
+    ).take(ADD_TO_PLAYLIST_API_LIMIT)
 
     val sequelTitle = sequelName(playlist.getName, getPlaylistsFromUser.map(_.getName))
     val newPlaylist = spotifyApi.createPlaylist(userId, sequelTitle)
