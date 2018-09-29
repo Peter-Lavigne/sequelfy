@@ -14,6 +14,10 @@ import scala.collection.mutable
   */
 class SpotifyUtils(spotifyApi: SpotifyApi) {
 
+  val SOURCE_PLAYLIST_SAMPLE_SIZE = 30
+
+  val userId: String = spotifyApi.getCurrentUsersProfile.build().execute().getId
+
   /**
     * Returns all the playlists (public and private) from a user.
     */
@@ -24,6 +28,16 @@ class SpotifyUtils(spotifyApi: SpotifyApi) {
       .build()
       .execute()
       .getItems
+  }
+
+  /**
+    * Takes a random sample (non-repeating) of Tracks from a Playlist.
+    *
+    * @param playlist   the playlist to sample from
+    * @param sampleSize the number of Tracks to take
+    */
+  def samplePlaylist(playlist: Playlist, sampleSize: Int): Seq[Track] = {
+    Random.shuffle(playlist.getTracks.getItems.toSeq).take(sampleSize).map(_.getTrack)
   }
 
   // TODO some artists don't work, such as Angels and Airwaves. look into why that's the case
@@ -64,34 +78,27 @@ class SpotifyUtils(spotifyApi: SpotifyApi) {
     )
   }
 
-  // returns n random tracks from a playlist (non-repeating)
-  def getRandomTracksFromPlaylist(playlist: Playlist, n: Int): Seq[PlaylistTrack] = {
-    Random.shuffle(playlist.getTracks.getItems.toSeq).take(n)
-  }
-
   // appends a digit to the end of 'name' (starting with 2) that doesn't conflict with any other names
   def sequelName(name: String, playlists: Seq[String]): String = {
     val prefix = if (name matches """.*\s\d+""") name.substring(0, name.lastIndexOf(" ")) else name
     prefix + " " + Stream.from(2).filter(n => !playlists.contains(s"$prefix ${n.toString}")).head.toString
   }
 
-  /** Create a playlist based on the given playlist. This method will use the genres of the artists within the playlist
-    * to create a new one.
+  /** Create a playlist based on the given playlist. This method will use the genres of the artists within
+    * the playlist to create a new one.
     *
-    * @param playlistId the id of the playlist to base the new one off of
-    * @return the playlist id of the new playlist
+    * @param sourcePlaylistId the id of the playlist to create a sequel to
+    * @return                 the playlist id of the new playlist
     */
-  def createPlaylistSequel(playlistId: String): String = {
-    val userId: String = spotifyApi.getCurrentUsersProfile.build().execute().getId
-
-    val playlist = spotifyApi.getPlaylist(
+  def createPlaylistSequel(sourcePlaylistId: String): String = {
+    val playlist: Playlist = spotifyApi.getPlaylist(
       userId,
-      playlistId
+      sourcePlaylistId
     ).build().execute()
 
-    val SAMPLE_SIZE = 30
-    val tracks: Seq[Track] = getRandomTracksFromPlaylist(playlist, SAMPLE_SIZE).map(_.getTrack)
-    val genreCounts: Seq[Seq[String]] = getGenresFromTracks(tracks)
+    val sourcePlaylistTracks: Seq[Track] = samplePlaylist(playlist, SOURCE_PLAYLIST_SAMPLE_SIZE)
+
+    val genreCounts: Seq[Seq[String]] = getGenresFromTracks(sourcePlaylistTracks)
 
     val MIN_FREQUENCY = 0.04
     val genres: Seq[String] = getFrequencies(genreCounts).filter(_._2 >= MIN_FREQUENCY).keys.toSeq
@@ -102,8 +109,8 @@ class SpotifyUtils(spotifyApi: SpotifyApi) {
     // TODO debug and fix empty playlists causing an error
     val songsPerPlaylist = if (soundOfPlaylists.nonEmpty) API_LIMIT / soundOfPlaylists.size else 0
 
-    val newPlaylistTracks: Seq[PlaylistTrack] = soundOfPlaylists.flatMap(
-      getRandomTracksFromPlaylist(_, songsPerPlaylist)
+    val newPlaylistTracks: Seq[Track] = soundOfPlaylists.flatMap(
+      samplePlaylist(_, songsPerPlaylist)
     ).take(API_LIMIT)
 
     val sequelTitle = sequelName(playlist.getName, getPlaylistsFromUser.map(_.getName))
@@ -114,7 +121,7 @@ class SpotifyUtils(spotifyApi: SpotifyApi) {
       .execute()
 
     spotifyApi
-      .addTracksToPlaylist(userId, newPlaylist.getId, newPlaylistTracks.map(_.getTrack.getUri).toArray)
+      .addTracksToPlaylist(userId, newPlaylist.getId, newPlaylistTracks.map(_.getUri).toArray)
       .position(0)
       .build()
       .execute()
