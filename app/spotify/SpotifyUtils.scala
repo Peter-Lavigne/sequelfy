@@ -14,6 +14,10 @@ import scala.collection.mutable
   */
 class SpotifyUtils(spotifyApi: SpotifyApi) {
 
+  // TODO some artists don't return a Sound of Playlist, such as Angels and Airwaves
+  // TODO local files cause an error, but there's currently no way to check for local files in the API
+  // TODO passing an empty playlist causes an error
+
   // number of songs to sample from the source playlist
   val SOURCE_PLAYLIST_SAMPLE_SIZE = 30
 
@@ -56,24 +60,6 @@ class SpotifyUtils(spotifyApi: SpotifyApi) {
   }
 
   /**
-    * Calculates the frequency at which each element occurs in a 2D Seq. Elements in the subsequences are
-    * given value relative to how many elements are in that sublist.
-    *
-    * For example, getFrequencies(Seq(Seq("A"), Seq("B", "C")) returns Map("A" -> 0.5, "B" -> 0.25, "C" -> 0.25
-    *
-    * @param elements the 2D Seq containing the elements to count
-    */
-  def getFrequencies[A](elements: Seq[Seq[A]]): Seq[(A, Double)] = {
-    val frequencies = mutable.Map[A, Double]()
-    for (inner <- elements; a <- inner) {
-      val current = frequencies.getOrElse(a, 0.0)
-      val addition = 1.0 / inner.size / elements.size
-      frequencies(a) = current + addition
-    }
-    frequencies.toSeq
-  }
-
-  /**
     * Returns the Artists of given Tracks.
     */
   def getArtistsFromTracks(tracks: Seq[Track]): Seq[Artist] = {
@@ -81,6 +67,7 @@ class SpotifyUtils(spotifyApi: SpotifyApi) {
       .getSeveralArtists(tracks.flatMap(_.getArtists).map(_.getId): _*)
       .build()
       .execute()
+      .toSeq
   }
 
   /**
@@ -99,7 +86,7 @@ class SpotifyUtils(spotifyApi: SpotifyApi) {
     val artistIdToGenres: Map[String, Seq[String]] =
       artists.map(artist => artist.getId -> artist.getGenres.toSeq).toMap
     val tracksGenres: Seq[Seq[String]] = tracks.flatMap(_.getArtists.map(artist => artistIdToGenres(artist.getId)))
-    getFrequencies(tracksGenres).filter(_._2 >= minFrequency).map(_._1)
+    SpotifyUtils.getFrequencies(tracksGenres).filter(_._2 >= minFrequency).map(_._1)
   }
 
   /**
@@ -115,17 +102,7 @@ class SpotifyUtils(spotifyApi: SpotifyApi) {
     soundOfPlaylist.map(p => getPlaylistFromId(p.getId))
   }
 
-  // TODO some artists don't return a Sound of Playlist, such as Angels and Airwaves
-  // TODO local files cause an error, but there's currently no way to check for local files in the API
-  // TODO passing an empty playlist causes an error
-
-  // appends a digit to the end of 'name' (starting with 2) that doesn't conflict with any other names
-  def sequelName(name: String, playlists: Seq[String]): String = {
-    val prefix = if (name matches """.*\s\d+""") name.substring(0, name.lastIndexOf(" ")) else name
-    prefix + " " + Stream.from(2).filter(n => !playlists.contains(s"$prefix ${n.toString}")).head.toString
-  }
-
-  /** Create a playlist based on the given playlist. This method will use the genres of the artists within
+  /** Create a playlist based on the given playlist. Uses the genres of the artists within
     * the playlist to create a new one.
     *
     * @param sourcePlaylistId the id of the playlist to create a sequel to
@@ -148,13 +125,14 @@ class SpotifyUtils(spotifyApi: SpotifyApi) {
     val genrePlaylists: Seq[Playlist] = sourcePlaylistGenres.flatMap(getPlaylistForGenre)
 
     // if no genres were found, create an empty playlist
-    val sampledTracksPerGenre = if (genrePlaylists.nonEmpty) ADD_TO_PLAYLIST_API_LIMIT / genrePlaylists.size else 0
+    val sampledTracksPerGenre: Int = if (genrePlaylists.nonEmpty) ADD_TO_PLAYLIST_API_LIMIT / genrePlaylists.size else 0
 
     val newPlaylistTracks: Seq[Track] = genrePlaylists.flatMap(
       samplePlaylist(_, sampledTracksPerGenre)
     ).take(ADD_TO_PLAYLIST_API_LIMIT)
 
-    val sequelTitle = sequelName(playlist.getName, getPlaylistsFromUser.map(_.getName))
+    val sequelTitle = SpotifyUtils.sequelName(playlist.getName, getPlaylistsFromUser.map(_.getName))
+
     val newPlaylist = spotifyApi.createPlaylist(userId, sequelTitle)
       .public_(true)
       .description(s"A sequel to the playlist ${playlist.getName} made using Sequelfy.com")
@@ -170,4 +148,41 @@ class SpotifyUtils(spotifyApi: SpotifyApi) {
     newPlaylist.getId
   }
 
+}
+
+
+object SpotifyUtils {
+  /**
+    * Calculates the frequency at which each element occurs in a 2D Seq. Elements in the subsequences are
+    * given value relative to how many elements are in that sublist.
+    *
+    * For example, getFrequencies(Seq(Seq("A"), Seq("B", "C")) returns Map("A" -> 0.5, "B" -> 0.25, "C" -> 0.25
+    *
+    * @param elements the 2D Seq containing the elements to count
+    */
+  def getFrequencies[A](elements: Seq[Seq[A]]): Seq[(A, Double)] = {
+    val frequencies = mutable.Map[A, Double]()
+    for (inner <- elements; a <- inner) {
+      val current = frequencies.getOrElse(a, 0.0)
+      val addition = 1.0 / inner.size / elements.size
+      frequencies(a) = current + addition
+    }
+    frequencies.toSeq
+  }
+
+  /**
+    * Computes the title of a sequel playlists. Ensures that there are no conflicts with existing playlists.
+    *
+    * Examples:
+    * sequelName("indie pop",   ["indie pop"])                => "indie pop 2"
+    * sequelName("indie pop",   ["indie pop", "indie pop 2"]) => "indie pop 3"
+    * sequelName("indie pop 2", ["indie pop", "indie pop 2"]) => "indie pop 3"
+    *
+    * @param name      the name of the playlist to make a sequel title to
+    * @param playlists the names of the existing playlist
+    */
+  def sequelName(name: String, playlists: Seq[String]): String = {
+    val prefix = if (name matches """.*\s\d+""") name.substring(0, name.lastIndexOf(" ")) else name
+    prefix + " " + Stream.from(2).filter(n => !playlists.contains(s"$prefix ${n.toString}")).head.toString
+  }
 }
